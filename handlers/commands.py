@@ -2811,7 +2811,7 @@ def setup_handlers(bot):
         quo = data.setdefault(str(last_id), {})
         quo['id'] = user_id
         quo['name'] = user_name
-        quo['date'] = date
+        quo['date'] = f"date"
         quo['text'] = text
 
         with open(path_file, 'w') as f:
