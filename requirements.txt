@@ -1,0 +1,6 @@
+telebot
+matplotlib
+emoji
+pytz
+numexpr
+python-dotenv
