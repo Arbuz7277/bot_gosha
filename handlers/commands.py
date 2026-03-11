@@ -2793,8 +2793,28 @@ def setup_handlers(bot):
 
     @bot.message_handler(commands=['q'])
     def cmd_quote(message):
-        bot.reply_to(message, "Command not found")
-        return
+        path_file = "dp/quotes"
+
+        if not os.path.exists(path_file):
+            with open(path_file, 'w') as f:
+                f.write('{"id": 1}')
+        with open(path_file, 'r') as f:
+            data = json.load(f)
+
+        text = message.text.split('\n', 1)[1]
+
+        last_id = data['id']
+        user_id = message.from_user.id
+        user_name = message.from_user.first_name
+        date = datetime.now().replace(microsecond=0)
+        
+        quo = data.setdefault(str(last_id), {})
+        quo['id'] = user_id
+        quo['name'] = user_name
+        quo['date'] = date
+        quo['text'] = text
+
+        bot.reply_to("Успешно!")
 
 
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
