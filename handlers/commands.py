@@ -2793,7 +2793,7 @@ def setup_handlers(bot):
 
     @bot.message_handler(commands=['q'])
     def cmd_quote(message):
-        path_file = "dp/quotes"
+        path_file = "dp/quotes.json"
 
         if not os.path.exists(path_file):
             with open(path_file, 'w') as f:
