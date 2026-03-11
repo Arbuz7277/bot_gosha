@@ -2814,7 +2814,10 @@ def setup_handlers(bot):
         quo['date'] = date
         quo['text'] = text
 
-        bot.reply_to("Успешно!")
+        with open(path_file, 'w') as f:
+            json.dump(data, f, indent=4)
+
+        bot.reply_to(message, "Успешно!")
 
 
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
