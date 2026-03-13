@@ -2800,8 +2800,12 @@ def setup_handlers(bot):
                 f.write('{"id": 1}')
         with open(path_file, 'r') as f:
             data = json.load(f)
-
-        text = message.text.split('\n', 1)[1]
+        
+        try:
+            text = message.text.split('\n', 1)[1]
+        except:
+            bot.reply_to(message, "❌ <b>Вы ввели пустую цитату или не перевели строку после команды.</b> После команды перейдите на следующую строку и напишите свою цитату.\n\n💡 <b>Пример использования</b>\n<blockquote>/q\nПишите своб цитату здесь.\nВ цитатах можно переводить строки.</blockquote>", parse_mode="HTML")
+            return
 
         last_id = data['id']
         user_id = message.from_user.id
@@ -2813,11 +2817,12 @@ def setup_handlers(bot):
         quo['name'] = user_name
         quo['date'] = f"date"
         quo['text'] = text
+        data['id'] += 1
 
         with open(path_file, 'w') as f:
             json.dump(data, f, indent=4)
 
-        bot.reply_to(message, "Успешно!")
+        bot.reply_to(message, f"✅ <b>Вы добавили цитату №{data['id'] - 1}</b>\n\n📝 Посмотреть все свои цитаты вы можете с помощью команды /my_quotes", parse_mode="HTML")
 
 
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
