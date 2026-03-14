@@ -2810,13 +2810,16 @@ def setup_handlers(bot):
         last_id = data['id']
         user_id = message.from_user.id
         user_name = message.from_user.first_name
-        date = datetime.now().replace(microsecond=0)
+        date = f"{datetime.now().replace(microsecond=0)}"
         
         quo = data.setdefault(str(last_id), {})
         quo['id'] = user_id
         quo['name'] = user_name
         quo['date'] = f"date"
         quo['text'] = text
+        quo['like'] = 0
+        quo['dislike'] = 0
+        quo['verified'] = None
         data['id'] += 1
 
         with open(path_file, 'w') as f:
@@ -2834,10 +2837,15 @@ def setup_handlers(bot):
         args = msg.text.split()
         if len(args) == 2 and args[1].isdigit():
             qid = args[1]
+            if not data.get(qid, None):
+                bot.reply_to(msg, "❌ <b>Такой цитаты не существует!</b>", parse_mode='HTML')
+                return
         else:
-            qid = str(random.randint(1, len(data)))
+            qid = str(random.randint(1, data['id'] - 1))
 
         quote = data[qid]
+        if quote['verified'] is False:
+            return
         text = quote['text']
         uid = quote['id']
         name = quote['name']
@@ -2848,8 +2856,13 @@ def setup_handlers(bot):
         else:
             author = users[str(uid)]['name']
 
+        # Keyboard
+        mar = types.InlineKeyboardMarkup()
+        mar.add(types.InlineKeyboardButton(f'{quote["like"]} 👍', callback_data=f"quote:0:{qid}:like"), types.InlineKeyboardButton(f'{quote["dislike"]} 👎', callback_data=f"quote:0:{qid}:dislike"))
+        mar.add(types.InlineKeyboardButton('⚠ Report', callback_data=f"quote:0:{qid}:report", style='danger'))
+
         recent_text = f"💬 Цитата №{qid}\n<blockquote>{text}</blockquote>\n\n👤 <b>Автор:</b> {author}\n⏰ <b>Дата:</b> {date} по UTC"
-        bot.reply_to(msg, recent_text, parse_mode="HTML")
+        bot.reply_to(msg, recent_text, parse_mode="HTML", reply_markup=mar)
 
 
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
