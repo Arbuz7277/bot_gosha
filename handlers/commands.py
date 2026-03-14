@@ -2824,6 +2824,33 @@ def setup_handlers(bot):
 
         bot.reply_to(message, f"✅ <b>Вы добавили цитату №{data['id'] - 1}</b>\n\n📝 Посмотреть все свои цитаты вы можете с помощью команды /my_quotes", parse_mode="HTML")
 
+    @bot.message_handler(commands=['sq', 'search_quote'])
+    def cmd_search_quote(msg):
+        path_file = "dp/quotes.json"
+
+        with open(path_file, 'r') as f:
+            data = json.load(f)
+
+        args = msg.text.split()
+        if len(args) == 2 and args[1].isdigit():
+            qid = args[1]
+        else:
+            qid = str(random.randint(1, len(data)))
+
+        quote = data[qid]
+        text = quote['text']
+        uid = quote['id']
+        name = quote['name']
+        date = quote['date']
+
+        if not str(uid) in users:
+            author = name
+        else:
+            author = users[str(uid)]['name']
+
+        recent_text = f"💬 Цитата №{qid}\n<blockquote>{text}</blockquote>\n\n👤 <b>Автор:</b> {author}\n⏰ <b>Дата:</b> {date} по UTC"
+        bot.reply_to(msg, recent_text, parse_mode="HTML")
+
 
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
     def text(message):
