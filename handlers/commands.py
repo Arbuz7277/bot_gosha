@@ -2864,6 +2864,38 @@ def setup_handlers(bot):
         recent_text = f"💬 Цитата №{qid}\n<blockquote>{text}</blockquote>\n\n👤 <b>Автор:</b> {author}\n⏰ <b>Дата:</b> {date} по UTC"
         bot.reply_to(msg, recent_text, parse_mode="HTML", reply_markup=mar)
 
+    @bot.message_handler(commands=['mq', 'my_quotes'])
+    def cmd_my_quotes(msg):
+        path_file = "dp/quotes.json"
+
+        with open(path_file, 'r') as f:
+            data = json.load(f)
+
+        user = msg.from_user
+
+        quotes_id = []
+        for qid, quote in data.items():
+            if qid.isdigit() and quote['id'] == user.id:
+                quotes_id.append(int(qid))
+
+        page = 1
+        total_page = int((len(quotes_id) - 1) / 20 + 1)
+        page_start = page * 20 - 20
+        page_end = page * 20 - 1
+
+        quotes = quotes_id[page_start:page_end]
+
+        text = f"💬 <b>Ваши цитаты</b>\nСтраница: {page}/{total_page}"
+        for quote_id in quotes:
+            quote = data[str(quote_id)]
+
+            quote_text = quote['text']
+            quote_date = quote['date']
+
+            text += f"\n\n№{quote_id} ¦ {quote_text[:20]}...\nДата: {quote_date}"
+
+        bot.reply_to(msg, text, parse_mode="HTML")
+
 
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
     def text(message):
