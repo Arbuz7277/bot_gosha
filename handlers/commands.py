@@ -2815,7 +2815,7 @@ def setup_handlers(bot):
         quo = data.setdefault(str(last_id), {})
         quo['id'] = user_id
         quo['name'] = user_name
-        quo['date'] = f"date"
+        quo['date'] = f"{date}"
         quo['text'] = text
         quo['like'] = 0
         quo['dislike'] = 0
@@ -2833,6 +2833,9 @@ def setup_handlers(bot):
 
         with open(path_file, 'r') as f:
             data = json.load(f)
+        if len(data) < 2:
+            bot.reply_to(msg, "❌ <b>У гоши пока что нет никаких цитат :(</b>\nИспользуйте /q для создания цитат.", parse_mode="HTML")
+            return
 
         args = msg.text.split()
         if len(args) == 2 and args[1].isdigit():
@@ -2877,6 +2880,10 @@ def setup_handlers(bot):
         for qid, quote in data.items():
             if qid.isdigit() and quote['id'] == user.id:
                 quotes_id.append(int(qid))
+
+        if len(quotes_id) == 0:
+            bot.reply_to(msg, "❌ <b>Вы еще не создали никаких цитат :(</b>\nСоздайте свою первую цитату с помощью /q", parse_mode='HTML')
+            return
 
         page = 1
         total_page = int((len(quotes_id) - 1) / 20 + 1)
