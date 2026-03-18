@@ -286,6 +286,61 @@ def setup_handlers(bot):
             
             bot.edit_message_text(f'Ваш реферальный код: <code>{code}</code>\nКод был активирован: <code>{users_referal}</code> раз\n\nt.me/gosha2200m_bot?start={code}\nПриглашайте людей с помощью этой ссылки получайте по 20 коинов за человека', call.message.chat.id, call.message.message_id, parse_mode='HTML', disable_web_page_preview=True, reply_markup=mar)
 
+        elif action == "quote":
+            def create_mar(like, dislike, qid):
+                mar = types.InlineKeyboardMarkup()
+                btn_like = types.InlineKeyboardButton(f"{len(like)} 👍", callback_data=f"quote:0:{qid}:like")
+                btn_dislike = types.InlineKeyboardButton(f"{len(dislike)} 👎", callback_data=f"quote:0:{qid}:dislike")
+                btn_report = types.InlineKeyboardButton("⚠ Report", callback_data=f"quote:0:{qid}:report", style="danger")
+                mar.add(btn_like, btn_dislike)
+                mar.add(btn_report)
+
+                return mar
+
+            qid = data[2]
+            do = data[3]
+            user_id = call.from_user.id
+
+            with open("dp/quotes.json", 'r') as f:
+                qdata = json.load(f)
+
+            quote = qdata[str(qid)]
+            
+            if do == "like":
+                if user_id in quote['like']:
+                    quote['like'].remove(user_id)
+                elif user_id in quote['dislike']:
+                    quote['dislike'].remove(user_id)
+                    quote['like'].append(user_id)
+                else:
+                    quote['like'].append(user_id)
+                mar = create_mar(quote['like'], quote['dislike'], qid)
+                bot.edit_message_reply_markup(chat_id, message_id, mar)
+            elif do == "dislike":
+                if user_id in quote['dislike']:
+                    quote['dislike'].remove(user_id)
+                elif user_id in quote['like']:
+                    quote['like'].remove(user_id)
+                    quote['dislike'].append(user_id)
+                else:
+                    quote['dislike'].append(user_id)
+                mar = create_mar(quote['like'], quote['dislike'], qid)
+                bot.edit_message_reply_markup(chat_id, message_id, mar)
+            elif do == "report":
+                if quote['verified'] is True:
+                    bot.answer_callback_query(call.id, text="Эта цитата была проверена администрацией бота")
+                    return
+                for uid, user in users.items():
+                    if user.get('admin'):
+                        bot.send_message(int(uid), f"⚠ На цитату №{qid} был отправлен репорт. Вам нужно проверить эту цитату.")
+
+                quote['verified'] = False
+                bot.answer_callback_query(call.id, text="✅ Жалоба подана")
+                bot.delete_message(chat_id, message_id)
+
+
+
+
         elif action == 'shop':
             with open(SHOP_ITEMS, 'r') as f:
                     shop_items = json.load(f)
@@ -2817,8 +2872,8 @@ def setup_handlers(bot):
         quo['name'] = user_name
         quo['date'] = f"{date}"
         quo['text'] = text
-        quo['like'] = 0
-        quo['dislike'] = 0
+        quo['like'] = []
+        quo['dislike'] = []
         quo['verified'] = None
         data['id'] += 1
 
@@ -2861,7 +2916,7 @@ def setup_handlers(bot):
 
         # Keyboard
         mar = types.InlineKeyboardMarkup()
-        mar.add(types.InlineKeyboardButton(f'{quote["like"]} 👍', callback_data=f"quote:0:{qid}:like"), types.InlineKeyboardButton(f'{quote["dislike"]} 👎', callback_data=f"quote:0:{qid}:dislike"))
+        mar.add(types.InlineKeyboardButton(f'{len(quote["like"])} 👍', callback_data=f"quote:0:{qid}:like"), types.InlineKeyboardButton(f'{len(quote["dislike"])} 👎', callback_data=f"quote:0:{qid}:dislike"))
         mar.add(types.InlineKeyboardButton('⚠ Report', callback_data=f"quote:0:{qid}:report", style='danger'))
 
         recent_text = f"💬 Цитата №{qid}\n<blockquote>{text}</blockquote>\n\n👤 <b>Автор:</b> {author}\n⏰ <b>Дата:</b> {date} по UTC"
