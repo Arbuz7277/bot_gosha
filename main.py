@@ -13,13 +13,11 @@ import telebot
 import threading
 print("Loading datatime...")
 from datetime import datetime, timedelta
-print("Loading matplotlib...")
-import matplotlib.pyplot as plt
-import io
 from dotenv import load_dotenv
+logging.basicConfig(level=logging.INFO,
+format="%(asctime)s : %(name)s %(levelname)s [%(filename)s:%(lineno)s] - %(message)s")
 print("Loading files...")
 from handlers.commands import setup_handlers
-from handlers.buttons import setup_buttons
 from utils import *
 
 class Color:
@@ -29,10 +27,10 @@ class Color:
     RESET = '\033[0m'
 
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 os.system('clear')
+logger.info("TEST")
 
 load_dotenv('secrets.env')
 API_TOKEN = os.getenv('TOKEN')

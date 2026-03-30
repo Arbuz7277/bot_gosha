@@ -1,5 +1,7 @@
 # Обработчики команд бота
 import telebot
+import logging
+logger = logging.getLogger(__name__)
 from telebot import types
 from config import*
 from utils import*
@@ -315,7 +317,7 @@ def setup_handlers(bot):
                 else:
                     quote['like'].append(user_id)
                 mar = create_mar(quote['like'], quote['dislike'], qid)
-                bot.edit_message_reply_markup(chat_id, message_id, mar)
+                bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=mar)
             elif do == "dislike":
                 if user_id in quote['dislike']:
                     quote['dislike'].remove(user_id)
@@ -325,7 +327,7 @@ def setup_handlers(bot):
                 else:
                     quote['dislike'].append(user_id)
                 mar = create_mar(quote['like'], quote['dislike'], qid)
-                bot.edit_message_reply_markup(chat_id, message_id, mar)
+                bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=mar)
             elif do == "report":
                 if quote['verified'] is True:
                     bot.answer_callback_query(call.id, text="Эта цитата была проверена администрацией бота")
@@ -337,6 +339,9 @@ def setup_handlers(bot):
                 quote['verified'] = False
                 bot.answer_callback_query(call.id, text="✅ Жалоба подана")
                 bot.delete_message(chat_id, message_id)
+
+            with open("dp/quotes.json", 'w') as f:
+                json.dump(qdata, f, indent=4)
 
 
 
@@ -2832,15 +2837,11 @@ def setup_handlers(bot):
         log = ''
         try:
             with open(f'Logs/{us_id}.txt', 'r') as f:
-                while True:
-                    lines = f.readlines()
-                    lines100 = lines[-100:]
-                    for line in lines100:
-                        log += line
-                    if len(log) > 4000:
-                        len_log -= 1
-                    else:
+                lines = f.readlines()[-200:]
+                for line in lines:
+                    if len(log) > 3000:
                         break
+                    log += line
         except:
             log += 'Empty...'
         
@@ -3128,6 +3129,7 @@ def setup_handlers(bot):
                     databank['money'] -= win
 
                     log(user_id, f"Casino: [WIN] {bid} coins -> {win} ({multi}x) coins (+{win - bid})")
+                    logger.info(f"user {user_id} won in /casino; {bid} -> {win} ({multi}x) conins (+{win - bid})")
 
                     text = f"✅ <b>Успех!</b>\n\nВы выиграли {win} {get_coin_form(win)}! (+{round(win - bid, 2)}, {multi}x)"
 
@@ -3148,6 +3150,7 @@ def setup_handlers(bot):
                     users[str(user_id)]['money'] += loser
 
                     log(user_id, f"Casino: [LOSS] {bid} coins -> {loser} ({multi}x) coins (-{bid - loser})")
+                    logger.info(f"user {user_id} lost in /casino; {bid} -> {loser} ({multi}x) conins (+{bid - loser})")
 
                     text = f"❌ <b>Неудача!</b>\n\nВы получили {loser} {get_coin_form(bid)}! ({round(loser - bid, 2)}, {multi}x)"
 

@@ -30,6 +30,29 @@ if not os.path.exists(ROULETTE_DATA):
 with open(ROULETTE_DATA, 'r', encoding='utf-8') as f:
     roulette_bids = json.load(f)
 
+def reduce_to_five(lst):
+    """
+    Оставляет в списке 5 элементов:
+    - первый
+    - последний
+    - 3 равномерно распределённых между ними
+    """
+    if len(lst) <= 5:
+        return lst
+    
+    indices = [0]  # первый индекс
+    
+    # Шаг для равномерного распределения
+    step = (len(lst) - 1) / 4
+    
+    for i in range(1, 5):
+        idx = int(round(i * step))
+        indices.append(idx)
+    
+    indices = sorted(set(indices))
+    
+    return [lst[i] for i in indices]
+
 def casino_load():
     with open('dp/casino.json', 'r') as f:
         return json.load(f)
