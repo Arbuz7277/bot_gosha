@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-print("Chats update...")
+logger.info("Chats update...")
 if not os.path.exists('dp/chats.json'):
     with open('dp/chats.json', 'w') as f:
         f.write('{}')
@@ -61,7 +61,6 @@ for chat_id, chat_data in chats_data.items():
 with open('dp/chats.json', 'w') as f:
     json.dump(chats_data, f, indent=2)
 def setup_handlers(bot):
-    bot.send_message(OWNER[0], f'Bot running!\n\nTime: {datetime.now().replace(microsecond=0)}')
     @bot.message_handler(func=lambda message: message.forward_date is not None)
     def cmd_forward(message):
         return

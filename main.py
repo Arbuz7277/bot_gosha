@@ -1,22 +1,17 @@
 # main.py
 
-print("Loading base libaries...")
 import os
 import time
 import random
 import json
 import socket
-print("Loading logging...")
 import logging
-print("Loading telebot...")
 import telebot
 import threading
-print("Loading datatime...")
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO,
 format="%(asctime)s : %(name)s %(levelname)s [%(filename)s:%(lineno)s] - %(message)s")
-print("Loading files...")
 from handlers.commands import setup_handlers
 from utils import *
 
@@ -26,11 +21,9 @@ class Color:
     YELLOW = '\033[38;5;178m'
     RESET = '\033[0m'
 
-
 logger = logging.getLogger(__name__)
 
-os.system('clear')
-logger.info("TEST")
+logger.info("Program is starting")
 
 load_dotenv('secrets.env')
 API_TOKEN = os.getenv('TOKEN')
