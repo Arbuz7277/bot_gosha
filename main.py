@@ -1,4 +1,8 @@
-# main.py
+# main.p
+
+IP = "129.150.55.165" 
+PORT = "1080"
+TYPE_PROXY = "socks5"
 
 import os
 import time
@@ -7,6 +11,8 @@ import json
 import socket
 import logging
 import telebot
+from telebot import apihelper
+import requests
 import threading
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -23,7 +29,13 @@ class Color:
 
 logger = logging.getLogger(__name__)
 
+
 logger.info("Program is starting")
+
+apihelper.proxy = {"https": f"{TYPE_PROXY}://{IP}:{PORT}"}
+apihelper.CONNECT_TIMEOUT = 15
+apihelper.READ_TIMEOUT = 15
+apihelper.SESSION_TIME_TO_LIVE = 5 * 60
 
 load_dotenv('secrets.env')
 API_TOKEN = os.getenv('TOKEN')
@@ -68,6 +80,7 @@ def main():
                     for uid in OWNER:
                         bot.send_message(uid, f'Error: {e}')
                     time.sleep(5)
+                    print("START")
                 except:
                     logger.error(f'{Color.RED}UNKNOW ERROR{Color.RESET}')
             else:
