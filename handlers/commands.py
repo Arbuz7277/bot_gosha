@@ -18,6 +18,7 @@ import ast
 import numexpr
 import re
 import os
+import uuid
 
 class Color:
     RED = '\033[91m'
@@ -120,24 +121,24 @@ def setup_handlers(bot):
             u1['money'] -= pay
             u2['money'] += pay_comm
             databank['money'] += comm
-            data = datetime.now(pytz.timezone('Europe/Moscow')).strftime('%d/%m/%y__%H:%M:%S')
+            date = datetime.now(pytz.timezone('Europe/Moscow')).strftime('%d/%m/%y__%H:%M:%S')
 
             log(user_id, f"Transfer: {pay_comm} coins to gosha_id_{u2['gid']} | commission {COMMISION_PAY}%")
             log(reply_id, f"Received: {pay_comm} from {user_id} | commission {COMMISION_PAY}%")
 
             save_users(users)
-
+            uuid_prefix = str(create_transfer(data[1], data[2], pay, COMMISION_PAY/100))[:8]
             try:
                 if hide_username1:
-                    check1 = f"💰 <b>Перевод</b>\n\n<b>От кого:</b> <code>{u1['name']}</code>\n<b>Гоша айди:</b> <code>{u1.get('gid')}</code>\n<b>Сумма:</b> <code>{pay_comm}</code> {get_coin_form(pay_comm)}\n<b>Комиссия:</b> <code>{comm}</code> {get_coin_form(comm)}\n<b>Дата получения по МСК:</b> <code>{data}</code>"
+                    check1 = f"💰 <b>Перевод</b>\n\n<b>От кого:</b> <code>{u1['name']}</code>\n<b>Гоша айди:</b> <code>{u1.get('gid')}</code>\n<b>Сумма:</b> <code>{pay_comm}</code> {get_coin_form(pay_comm)}\n<b>Комиссия:</b> <code>{comm}</code> {get_coin_form(comm)}\n<b>Дата получения по МСК:</b> <code>{date}</code>\nUUID: {uuid_prefix}..."
                 else:
-                    check1 = f"💰 <b>Перевод</b>\n\n<b>От кого:</b> <code>{u1['name']}</code>\n<b>Юзернейм:</b> @{u1.get('username')}\n<b>Гоша айди:</b> <code>{u1.get('gid')}</code>\n<b>Сумма:</b> <code>{pay_comm}</code> {get_coin_form(pay_comm)}\n<b>Комиссия:</b> <code>{comm}</code> {get_coin_form(comm)}\n<b>Дата получения по МСК:</b> <code>{data}</code>"
+                    check1 = f"💰 <b>Перевод</b>\n\n<b>От кого:</b> <code>{u1['name']}</code>\n<b>Юзернейм:</b> @{u1.get('username')}\n<b>Гоша айди:</b> <code>{u1.get('gid')}</code>\n<b>Сумма:</b> <code>{pay_comm}</code> {get_coin_form(pay_comm)}\n<b>Комиссия:</b> <code>{comm}</code> {get_coin_form(comm)}\n<b>Дата получения по МСК:</b> <code>{date}</code>\nUUID: {uuid_prefix}..."
                 if hide_username2:
-                    check2 = f"✅ <b>Успешный перевод</b>\n\n<b>Получатель:</b> <code>{u2['name']}</code>\n<b>Гоша айди:</b> <code>{u2.get('gid')}</code>\n<b>Переведено:</b> <code>{pay_comm}</code> {get_coin_form(pay_comm)}\n<b>Комиссия:</b> <code>{comm}</code> {get_coin_form(comm)}\n<b>Дата отправки по МСК:</b> <code>{data}</code>"
+                    check2 = f"✅ <b>Успешный перевод</b>\n\n<b>Получатель:</b> <code>{u2['name']}</code>\n<b>Гоша айди:</b> <code>{u2.get('gid')}</code>\n<b>Переведено:</b> <code>{pay_comm}</code> {get_coin_form(pay_comm)}\n<b>Комиссия:</b> <code>{comm}</code> {get_coin_form(comm)}\n<b>Дата отправки по МСК:</b> <code>{date}</code>\nUUID: {uuid_prefix}..."
                 else:
-                    check2 = f"✅ <b>Успешный перевод</b>\n\n<b>Получатель:</b> <code>{u2['name']}</code>\n<b>Юзернейм:</b> @{u2.get('username')}\n<b>Гоша айди:</b> <code>{u2.get('gid')}</code>\n<b>Переведено:</b> <code>{pay_comm}</code> {get_coin_form(pay_comm)}\n<b>Комиссия:</b> <code>{comm}</code> {get_coin_form(comm)}\n<b>Дата отправки по МСК:</b> <code>{data}</code>"
-            except:
-                bot.edit_message_text("\n\n\n❌ Ошибка при составлении чека.", call.message.chat.id, call.message.message_id)
+                    check2 = f"✅ <b>Успешный перевод</b>\n\n<b>Получатель:</b> <code>{u2['name']}</code>\n<b>Юзернейм:</b> @{u2.get('username')}\n<b>Гоша айди:</b> <code>{u2.get('gid')}</code>\n<b>Переведено:</b> <code>{pay_comm}</code> {get_coin_form(pay_comm)}\n<b>Комиссия:</b> <code>{comm}</code> {get_coin_form(comm)}\n<b>Дата отправки по МСК:</b> <code>{date}</code>\nUUID: {uuid_prefix}..."
+            except Exception as e:
+                bot.edit_message_text(f"\n\n\n❌ Ошибка при составлении чека.\n\n{type(e).__name__}: {e}", call.message.chat.id, call.message.message_id)
                 return
 
             text = ''
@@ -165,7 +166,61 @@ def setup_handlers(bot):
         elif action == "pay_cancel":
             bot.answer_callback_query(call.id, "❌ Перевод отменён!")
             bot.edit_message_text("❌ Перевод отменён.", call.message.chat.id, call.message.message_id)
-    
+
+        elif action == "mq":
+            mq_action = data[2]
+            current_page = int(data[3])
+            path_file = "dp/quotes.json"
+            message = call.message
+
+            with open(path_file, 'r') as f:
+                data = json.load(f)
+
+            user = call.from_user
+
+            quotes_id = []
+            for qid, quote in data.items():
+                if qid.isdigit() and quote['id'] == user.id:
+                    quotes_id.append(int(qid))
+
+            if len(quotes_id) == 0:
+                bot.reply_to(message, "❌ <b>Вы еще не создали никаких цитат :(</b>\nСоздайте свою первую цитату с помощью /q", parse_mode='HTML')
+                return
+            quotes_per_page = 5
+            total_page = (len(quotes_id) + quotes_per_page - 1) // quotes_per_page
+
+            page_data = other_data.setdefault('mq', {})
+            page = page_data.get(str(user.id), 1)
+            lpage = page
+            page += 1 if mq_action == "up" else -1
+            page = min(total_page, max(1, page))
+            if page == lpage:
+                bot.answer_callback_query(call.id, "No")
+                return
+            page_data[str(user.id)] = page
+
+            page_start = (page - 1) * quotes_per_page
+            page_end = page_start + quotes_per_page
+
+            mar = types.InlineKeyboardMarkup()
+            btn1 = types.InlineKeyboardButton("<", callback_data=f"mq:{user.id}:down:{page}")
+            btn2 = types.InlineKeyboardButton(">", callback_data=f"mq:{user.id}:up:{page}")
+            mar.add(btn1, btn2)
+
+
+            quotes = quotes_id[page_start:page_end]
+
+            text = f"💬 <b>Ваши цитаты</b>\nСтраница: {page}/{total_page}"
+            for quote_id in quotes:
+                quote = data[str(quote_id)]
+
+                quote_text = quote['text']
+                quote_date = quote['date']
+
+                text += f"\n\n№{quote_id} ¦ {quote_text[:20]}...\nДата: {quote_date}"
+
+            bot.edit_message_text(text, call.message.chat.id, call.message.message_id, parse_mode="HTML", reply_markup=mar)
+
         elif action == "help":
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton('Назад', callback_data=f'menu:{call.from_user.id}'))
@@ -2421,7 +2476,7 @@ def setup_handlers(bot):
         args = message.text.lower().split()
         if len(args) != 2:
             return
-        bot.reply_to(message, f'<a href="tg://user?id={args[1]}">{args[1]}</a>', parse_mode='HTML')
+        bot.reply_to(message, f'URL: <a href="tg://user?id={args[1]}">{args[1]}</a>', parse_mode='HTML')
 
     @bot.message_handler(commands=['say'])
     def cmd_say(message):
@@ -2923,13 +2978,13 @@ def setup_handlers(bot):
         bot.reply_to(msg, recent_text, parse_mode="HTML", reply_markup=mar)
 
     @bot.message_handler(commands=['mq', 'my_quotes'])
-    def cmd_my_quotes(msg):
+    def cmd_my_quotes(message, page=1):
         path_file = "dp/quotes.json"
 
         with open(path_file, 'r') as f:
             data = json.load(f)
 
-        user = msg.from_user
+        user = message.from_user
 
         quotes_id = []
         for qid, quote in data.items():
@@ -2937,13 +2992,22 @@ def setup_handlers(bot):
                 quotes_id.append(int(qid))
 
         if len(quotes_id) == 0:
-            bot.reply_to(msg, "❌ <b>Вы еще не создали никаких цитат :(</b>\nСоздайте свою первую цитату с помощью /q", parse_mode='HTML')
+            bot.reply_to(message, "❌ <b>Вы еще не создали никаких цитат :(</b>\nСоздайте свою первую цитату с помощью /q", parse_mode='HTML')
             return
 
-        page = 1
-        total_page = int((len(quotes_id) - 1) / 20 + 1)
-        page_start = page * 20 - 20
-        page_end = page * 20 - 1
+        page_data = other_data.setdefault('mq', {})
+        page_data[str(user.id)] = page
+
+        quotes_per_page = 5
+        total_page = (len(quotes_id) + quotes_per_page - 1) // quotes_per_page
+        page_start = (page - 1) * quotes_per_page
+        page_end = page_start + quotes_per_page
+
+        mar = types.InlineKeyboardMarkup()
+        btn1 = types.InlineKeyboardButton("<", callback_data=f"mq:{user.id}:down:{page}")
+        btn2 = types.InlineKeyboardButton(">", callback_data=f"mq:{user.id}:up:{page}")
+        mar.add(btn1, btn2)
+
 
         quotes = quotes_id[page_start:page_end]
 
@@ -2956,9 +3020,9 @@ def setup_handlers(bot):
 
             text += f"\n\n№{quote_id} ¦ {quote_text[:20]}...\nДата: {quote_date}"
 
-        bot.reply_to(msg, text, parse_mode="HTML")
+        bot.reply_to(message, text, parse_mode="HTML", reply_markup=mar)
 
-
+ 
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
     def text(message):
         user_id = message.from_user.id

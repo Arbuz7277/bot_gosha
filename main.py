@@ -32,10 +32,12 @@ logger = logging.getLogger(__name__)
 
 logger.info("Program is starting")
 
+"""
 apihelper.proxy = {"https": f"{TYPE_PROXY}://{IP}:{PORT}"}
 apihelper.CONNECT_TIMEOUT = 15
 apihelper.READ_TIMEOUT = 15
 apihelper.SESSION_TIME_TO_LIVE = 5 * 60
+"""
 
 load_dotenv('secrets.env')
 API_TOKEN = os.getenv('TOKEN')

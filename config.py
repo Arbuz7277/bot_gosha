@@ -14,7 +14,7 @@ SHOP_ITEMS = 'dp/shop_items.json'
 DICE_PATH = 'dp/dice.json'
 OTHER_DATA = 'dp/other_data.json'
 ROULETTE_DATA = 'dp/roulette.json'
-
+TRANSFER_DATA = 'dp/transfers.json'
 
 
 FARM_TIME = 60 * 60 * 2    # seconds
@@ -83,3 +83,4 @@ ROULETTE_NUMBERS = [
 other_time = {}
 user_buttons = {}
 time_roulette = {}
+other_data = {}

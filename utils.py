@@ -1,6 +1,6 @@
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytz
 import json
 import random
@@ -9,6 +9,7 @@ import telebot
 import emoji
 import re
 import numexpr
+import uuid
 
 class Color:
     RED = '\033[91m'
@@ -29,6 +30,26 @@ if not os.path.exists(ROULETTE_DATA):
         f.write('{}')
 with open(ROULETTE_DATA, 'r', encoding='utf-8') as f:
     roulette_bids = json.load(f)
+
+def create_transfer(sender, receiver, money, commission=0.0, type_transfer='TRANSFER'):
+    with open(TRANSFER_DATA) as f:
+        data = json.load(f)
+
+    uuid_t = str(uuid.uuid4())
+    data[uuid_t] = {}
+    check = data[uuid_t]
+    check['uuid'] = uuid_t
+    check['create_at'] = str(datetime.now(timezone.utc))
+    check['sender'] = int(sender)
+    check['receiver'] = int(receiver)
+    check['money'] = money
+    check['commission'] = commission
+    check['money_received'] = money - money * commission
+    check['type'] = type_transfer
+
+    with open(TRANSFER_DATA, 'w') as f:
+        json.dump(data, f, indent=1)
+    return uuid_t
 
 def reduce_to_five(lst):
     """
