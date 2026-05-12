@@ -2860,7 +2860,8 @@ def setup_handlers(bot):
 
     @bot.message_handler(commands=['answer'])
     def cmd_answer(message):
-        answer = message.text.replace('/answer', '', 1).replace('**', '')
+        if message.from_user.id not in OWNER: return
+        answer = message.text.replace('/answer', '', 1) 
 
         try:
             result = safe_calc(answer)
@@ -3058,7 +3059,7 @@ def setup_handlers(bot):
         def is_valid_nonce(seed, nonce, target):
             message = seed + str(nonce)
             hash_hex = hashlib.sha256(message.encode('utf-8')).hexdigest()
-            return hash_hex.startswith(target)
+            return int(hash_hex, 16) < target
 
         mine_path = 'dp/mine_data.json'
         if not os.path.exists(mine_path):
@@ -3070,7 +3071,7 @@ def setup_handlers(bot):
         # Var
         size_token = 32
         
-        default_difficult = 9
+        default_difficult = 1
         
         data.setdefault('seed', secrets.token_bytes(size_token).hex())
         data.setdefault('difficult', default_difficult)
@@ -3078,16 +3079,17 @@ def setup_handlers(bot):
 
         seed = data['seed']
         difficult = data['difficult']
-        target = '0' * difficult
 
-        reward = 5 ** (difficult - 6)
+        target = int(2**256 / (1.5 ** difficult))
+
+        reward = round(difficult * 0.4, 2)
 
         with open(mine_path, 'w') as f:
             json.dump(data, f, indent=4)
 
         args = msg.text.split()
         if len(args) != 2:
-            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>sha256(seed + str(nonce))</code> в hex начинается с {difficult} нулей.\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Difficult: {difficult}\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>hash_hex=hashlib.sha256(message.encode("utf-8")).hexdigest()</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
+            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + nonce), 16) &lt; {target}</code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: {target} (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>hash_hex=hashlib.sha256(message.encode("utf-8")).hexdigest()</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
             return
         
         try:
@@ -3099,11 +3101,25 @@ def setup_handlers(bot):
         is_valid = is_valid_nonce(seed, nonce, target)
         if is_valid:
             data['seed'] = secrets.token_bytes(size_token).hex()
-            data['difficult'] = difficult
+            data['difficult'] = difficult + 1
             with open(mine_path, 'w') as f:
                 json.dump(data, f, indent=4)
-        
-        if is_valid:
+
+            with open("dp/mine_history.json", 'r') as f:
+                history = json.load(f)
+
+            history[seed] = {}
+            hd = history[seed]
+            hd["seed"] = seed
+            hd["difficult"] = difficult
+            hd['target'] = target
+            hd['nonce'] = nonce
+            hd['user_id'] = msg.from_user.id
+            hd['time'] = f"{datetime.now()}"
+            
+            with open("dp/mine_history.json", 'w') as f:
+                json.dump(history, f, indent=2)
+
             user['money'] += reward
             bot.reply_to(msg, f"Is valid nonce: {is_valid}\nYou got {reward} coins!\n\n<b>Seed UPDATED!</b>", parse_mode='HTML')
         else:
