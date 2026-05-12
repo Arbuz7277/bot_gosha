@@ -19,6 +19,7 @@ import numexpr
 import re
 import os
 import uuid
+import hashlib
 
 class Color:
     RED = '\033[91m'
@@ -186,7 +187,7 @@ def setup_handlers(bot):
             if len(quotes_id) == 0:
                 bot.reply_to(message, "❌ <b>Вы еще не создали никаких цитат :(</b>\nСоздайте свою первую цитату с помощью /q", parse_mode='HTML')
                 return
-            quotes_per_page = 5
+            quotes_per_page = QUOTES_PER_PAGE
             total_page = (len(quotes_id) + quotes_per_page - 1) // quotes_per_page
 
             page_data = other_data.setdefault('mq', {})
@@ -1692,21 +1693,30 @@ def setup_handlers(bot):
 
         chat_data = data[str(message.chat.id)]
         sorted_days = sorted(chat_data.keys(), key=lambda date: datetime.strptime(date, "%Y-%m-%d"))
+        days_label = []
         today = datetime.now().strftime("%Y-%m-%d")
+        for i, date in enumerate(sorted_days):
+            if i % (len(sorted_days)//5) == 0 or date == today:
+                days_label.append(date)
+            else:
+                days_label.append(' '*i)
 
         assets = []
-        for day in sorted_days:
+        today_index = None
+        for i, day in enumerate(sorted_days):
             day_total = sum(chat_data[day].values())
             assets.append(day_total)
+            if day == today:
+                today_index = i
 
         days = list(range(len(assets)))
 
         plt.figure(figsize=(10, 6))
-        plt.bar(list(chat_data.keys()), assets, width=0.9, alpha=0.8)
+        plt.bar(days_label, assets, width=0.9, alpha=0.8)
         plt.title("Chat active")
         plt.xlabel("Days")
         plt.ylabel("Messages")
-        plt.grid(True)
+        plt.grid(True, alpha=0.3)
 
         buf = io.BytesIO()
         plt.savefig(buf, format='png')
@@ -2946,15 +2956,29 @@ def setup_handlers(bot):
         if len(data) < 2:
             bot.reply_to(msg, "❌ <b>У гоши пока что нет никаких цитат :(</b>\nИспользуйте /q для создания цитат.", parse_mode="HTML")
             return
-
+        
+        qid = None
         args = msg.text.split()
         if len(args) == 2 and args[1].isdigit():
             qid = args[1]
             if not data.get(qid, None):
                 bot.reply_to(msg, "❌ <b>Такой цитаты не существует!</b>", parse_mode='HTML')
                 return
-        else:
-            qid = str(random.randint(1, data['id'] - 1))
+
+        only_verified = True if len(args) == 2 and args[1] == 'm' else False
+        
+        no_verif = []
+        if only_verified:
+            for key, quote in data.items():
+                if key == 'id':
+                    continue
+                if quote['verified'] is False:
+                    no_verif.append(key)
+            
+            bot.reply_to(msg, f"ID of unverified quotes\n\n{', '.join(map(str, no_verif))}")
+            return
+
+        qid = qid if qid else str(random.randint(1, data['id'] - 1))
 
         quote = data[qid]
         if quote['verified'] is False:
@@ -2998,7 +3022,7 @@ def setup_handlers(bot):
         page_data = other_data.setdefault('mq', {})
         page_data[str(user.id)] = page
 
-        quotes_per_page = 5
+        quotes_per_page = QUOTES_PER_PAGE
         total_page = (len(quotes_id) + quotes_per_page - 1) // quotes_per_page
         page_start = (page - 1) * quotes_per_page
         page_end = page_start + quotes_per_page
@@ -3021,6 +3045,70 @@ def setup_handlers(bot):
             text += f"\n\n№{quote_id} ¦ {quote_text[:20]}...\nДата: {quote_date}"
 
         bot.reply_to(message, text, parse_mode="HTML", reply_markup=mar)
+
+    @bot.message_handler(commands=['mine', 'miner'])
+    def cmd_mine(msg):
+        if bot_stat(msg, bot): return
+        user_id = msg.from_user.id
+        add_chat(msg.chat.id)
+        if str(user_id) not in users:
+            register(msg, bot, types, users)
+            return
+        user = users[str(user_id)]
+        def is_valid_nonce(seed, nonce, target):
+            message = seed + str(nonce)
+            hash_hex = hashlib.sha256(message.encode('utf-8')).hexdigest()
+            return hash_hex.startswith(target)
+
+        mine_path = 'dp/mine_data.json'
+        if not os.path.exists(mine_path):
+            with open(mine_path, 'w') as f:
+                f.write("{}")
+        with open(mine_path, 'r') as f:
+            data = json.load(f)
+        
+        # Var
+        size_token = 32
+        
+        default_difficult = 9
+        
+        data.setdefault('seed', secrets.token_bytes(size_token).hex())
+        data.setdefault('difficult', default_difficult)
+
+
+        seed = data['seed']
+        difficult = data['difficult']
+        target = '0' * difficult
+
+        reward = 5 ** (difficult - 6)
+
+        with open(mine_path, 'w') as f:
+            json.dump(data, f, indent=4)
+
+        args = msg.text.split()
+        if len(args) != 2:
+            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>sha256(seed + str(nonce))</code> в hex начинается с {difficult} нулей.\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Difficult: {difficult}\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>hash_hex=hashlib.sha256(message.encode("utf-8")).hexdigest()</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
+            return
+        
+        try:
+            nonce = int(args[1])
+        except:
+            bot.reply_to(msg, "Its not number")
+            return
+        
+        is_valid = is_valid_nonce(seed, nonce, target)
+        if is_valid:
+            data['seed'] = secrets.token_bytes(size_token).hex()
+            data['difficult'] = difficult
+            with open(mine_path, 'w') as f:
+                json.dump(data, f, indent=4)
+        
+        if is_valid:
+            user['money'] += reward
+            bot.reply_to(msg, f"Is valid nonce: {is_valid}\nYou got {reward} coins!\n\n<b>Seed UPDATED!</b>", parse_mode='HTML')
+        else:
+            bot.reply_to(msg, f"Is valid nonce: {is_valid}")
+        save_users(users)
 
  
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])

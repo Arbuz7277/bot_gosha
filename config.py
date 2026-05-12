@@ -21,6 +21,8 @@ FARM_TIME = 60 * 60 * 2    # seconds
 MULTI_FARM = 4
 FARM_RANGE = (200, 1000)
 
+QUOTES_PER_PAGE = 6
+
 KD_ROULETTE = 30       # seconds
 KD_NUMBER = 1.5        # seconds
 KD_FEEDBACK = 600      # seconds
