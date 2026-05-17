@@ -306,7 +306,7 @@ def setup_handlers(bot):
                     running = False
                     referal_code = random.randint(100000, 999999)
                     for uid, data in referal.items():
-                        if referal_code == data['code']:
+                        if referal_code == referal['code']:
                             running = True
                 
                 referal[str(user_id)] = {}
@@ -2860,8 +2860,7 @@ def setup_handlers(bot):
 
     @bot.message_handler(commands=['answer'])
     def cmd_answer(message):
-        if message.from_user.id not in OWNER: return
-        answer = message.text.replace('/answer', '', 1) 
+        answer = message.text.replace('/answer', '', 1).replace('^', '**').replace('pi', '3.14159265').replace('G', '(6.67430*10**(-11))').replace('c', '299792458')
 
         try:
             result = safe_calc(answer)
@@ -3082,14 +3081,14 @@ def setup_handlers(bot):
 
         target = int(2**256 / (1.5 ** difficult))
 
-        reward = round(difficult * 0.4, 2)
+        reward = round(65*2**(0.5*(difficult - 65)), 2)
 
         with open(mine_path, 'w') as f:
             json.dump(data, f, indent=4)
 
         args = msg.text.split()
         if len(args) != 2:
-            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + nonce), 16) &lt; {target}</code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: {target} (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>hash_hex=hashlib.sha256(message.encode("utf-8")).hexdigest()</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
+            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + nonce), 16) &lt; target </code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: <code>{target}</code> (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>hash_hex=hashlib.sha256(message.encode("utf-8")).hexdigest()</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
             return
         
         try:
