@@ -2867,7 +2867,7 @@ def setup_handlers(bot):
         except Exception as e:
             bot.reply_to(message, f'Error! {e}')
             return
-        bot.reply_to(message, f"{answer} = {result}")
+        bot.reply_to(message, f"Example: <code>{answer}</code>\n\nAnswer: <code>{result}</code>", parse_mode='HTML')
 
     @bot.message_handler(commands=['me', 'm'])
     def cmd_rp_me(message):
@@ -3060,35 +3060,47 @@ def setup_handlers(bot):
             hash_hex = hashlib.sha256(message.encode('utf-8')).hexdigest()
             return int(hash_hex, 16) < target
 
+        default_time = 60 * 30
         mine_path = 'dp/mine_data.json'
         if not os.path.exists(mine_path):
             with open(mine_path, 'w') as f:
                 f.write("{}")
         with open(mine_path, 'r') as f:
             data = json.load(f)
-        
+
+        with open("dp/mine_history.json", 'r') as f:
+            mine_history = json.load(f)
+        if not mine_history:
+            current_time = default_time
+        else:
+            blocks = list(mine_history.values())
+            blocks.sort(key=lambda b: b["time"])
+            last_block = blocks[-1]
+            last_time = last_block['time']
+            current_time = time.time() - last_time
+            
         # Var
         size_token = 32
         
-        default_difficult = 1
+        max_target = (2**16 - 1) << 208
         
         data.setdefault('seed', secrets.token_bytes(size_token).hex())
-        data.setdefault('difficult', default_difficult)
-
+        data.setdefault('target', int(max_target))
 
         seed = data['seed']
-        difficult = data['difficult']
+        target = data['target']
+        difficult = round(max_target / target)
 
-        target = int(2**256 / (1.5 ** difficult))
 
-        reward = round(65*2**(0.5*(difficult - 65)), 2)
+
+        reward = 50
 
         with open(mine_path, 'w') as f:
             json.dump(data, f, indent=4)
 
         args = msg.text.split()
         if len(args) != 2:
-            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + nonce), 16) &lt; target </code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: <code>{target}</code> (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>hash_hex=hashlib.sha256(message.encode("utf-8")).hexdigest()</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
+            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + str(nonce)), 16) &lt; target </code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: <code>{target}</code> (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>int(hashlib.sha256((seed + str(nonce)).encode("utf-8")).hexdigest(), 16) &lt target</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
             return
         
         try:
@@ -3100,7 +3112,7 @@ def setup_handlers(bot):
         is_valid = is_valid_nonce(seed, nonce, target)
         if is_valid:
             data['seed'] = secrets.token_bytes(size_token).hex()
-            data['difficult'] = difficult + 1
+            data['target'] = target = int(max(target / 2, min(max_target, min(target * 2, (target / (default_time / current_time))))))
             with open(mine_path, 'w') as f:
                 json.dump(data, f, indent=4)
 
@@ -3114,12 +3126,15 @@ def setup_handlers(bot):
             hd['target'] = target
             hd['nonce'] = nonce
             hd['user_id'] = msg.from_user.id
-            hd['time'] = f"{datetime.now()}"
+            hd['date'] = f"{datetime.now()}"
+            hd['time'] = time.time()
             
             with open("dp/mine_history.json", 'w') as f:
                 json.dump(history, f, indent=2)
 
             user['money'] += reward
+            logger.info(f"Found block, user id: {msg.from_user.id}")
+
             bot.reply_to(msg, f"Is valid nonce: {is_valid}\nYou got {reward} coins!\n\n<b>Seed UPDATED!</b>", parse_mode='HTML')
         else:
             bot.reply_to(msg, f"Is valid nonce: {is_valid}")
