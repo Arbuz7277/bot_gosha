@@ -1399,6 +1399,9 @@ def setup_handlers(bot):
             if bid < 0.1:
                 bot.reply_to(message, "❌ Ошибка!\n\nВводите сумму больше 0.1!")
                 return
+            elif bid > 1000:
+                bot.reply_to(message, "The bet can't be more than 1000 coins.")
+                return
         except:
             bot.reply_to(message, "❌ Ошибка!\n\nВводите число. Например: 3.14")
             return
@@ -3112,13 +3115,27 @@ def setup_handlers(bot):
         is_valid = is_valid_nonce(seed, nonce, target)
         if is_valid:
             data['seed'] = secrets.token_bytes(size_token).hex()
-            data['target'] = target = int(max(target / 2, min(max_target, min(target * 2, (target / (default_time / current_time))))))
             with open(mine_path, 'w') as f:
                 json.dump(data, f, indent=4)
 
             with open("dp/mine_history.json", 'r') as f:
                 history = json.load(f)
+            
+            med_len = 5
+            if len(history) % med_len == 0:
+                #  Total blocks: med_len + 1
+                history_values = sorted(history.values(), key=lambda x: x['time'])[-(med_len + 1):]
+                time_list = []
+                for i in range(1, med_len + 1):
+                    last_time = history_values[i - 1]['time']
+                    current_time = history_values[i]['time']
+                    total_time = current_time - last_time
+                    time_list.append(total_time)
 
+                sort_time = sorted(time_list)
+                time_med = sort_time[len(sort_time)//2]
+
+                data['target'] = target = int(max(target / 4, min(max_target, min(target * 4, (target / (default_time / time_med))))))
             history[seed] = {}
             hd = history[seed]
             hd["seed"] = seed
@@ -3134,11 +3151,24 @@ def setup_handlers(bot):
 
             user['money'] += reward
             logger.info(f"Found block, user id: {msg.from_user.id}")
+            with open("dp/mine_history.txt", 'a') as f:
+                f.write(f"[{hd['date']}] Found nonce.\nSeed: {hd['seed']}\nTarget: {hd['target']}\nNonce: {hd['nonce']}\nUser_id: {hd['user_id']}")
 
             bot.reply_to(msg, f"Is valid nonce: {is_valid}\nYou got {reward} coins!\n\n<b>Seed UPDATED!</b>", parse_mode='HTML')
         else:
             bot.reply_to(msg, f"Is valid nonce: {is_valid}")
         save_users(users)
+
+    @bot.message_handler(commands=['miner_info'])
+    def cmd_miner_info(msg): 
+        with open("dp/mine_history.json", 'r') as f:
+            history = json.load(f)
+
+        blocks_len = len(history)
+
+        text = f"All blocks: {blocks_len}\n\nWrite /miner"
+
+        bot.reply_to(msg, text)
 
  
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
