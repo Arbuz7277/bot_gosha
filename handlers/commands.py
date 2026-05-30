@@ -8,6 +8,9 @@ from utils import*
 import time
 import pytz
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+from queue import Queue
+from groq import Groq
 import matplotlib.pyplot as plt
 import io
 import secrets
@@ -30,6 +33,84 @@ class Color:
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+load_dotenv('secrets.env')
+API_AI = os.getenv('API_AI')
+
+# For AI
+task_queue = Queue()
+processing_status = {}
+
+class GoshaAI:
+    def __init__(self, bot, api):
+        self.bot = bot
+        self.client = Groq(api_key=api)
+
+        self.system_prompt = "You speak russia. You name - Gosha."
+
+    def load(self):
+        if not os.path.extsts('dp/ai_data.json'):
+            with open('dp/ai_data.json', 'w') as f: f.write('{}')
+        with open('dp/ai_data.json', 'r') as f:
+            return json.load(f)
+
+    def save(self, data):
+        with open('dp/ai_data.json', 'w') as f:
+            json.dump(f, data, indent=4)
+
+    def is_complex_query(self, message):
+        judge_messages = [
+            {"role": "system", "content": """Hello! Its query hard or easy?"""},
+            {"role": "user", "content": message}
+        ]
+
+        try:
+            response = self.client.chat.completions.create(
+                message=judge_messages,
+                model="llama-3.1-8b-instant",
+            )
+            answer = response.choices[0].message.content.lower().strip()
+            return answer.startswith("hard")
+        except:
+            return False
+
+    def process_message(self, char_id, user_message="Hello"):
+        try:
+            self.bot.send_chat_action(chat_id, 'typing')
+
+            use_complex = self.is_complex_query(user_message)
+            model = "llama-3.3-70b-versatile" if use_complex else "llama-3.1-8b-instant"
+
+            messages = [
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": user_message}
+            ]
+
+            response = self.client.chat.completions.create(
+                messages=messages,
+                model=model
+            )
+
+            reply = response.choices[0].message.content
+
+            if "<GOSHA_STOP>" in reply:
+                reply = "Sorry, I don't want to answer such topics."
+
+            self.bot.send_message(chat_id, reply)
+        except Exception as e:
+            logger.error(f"{type(e).__name__}: {e}")
+            self.bot.send_message(chat_id, "Sorry, try again")
+
+    def worker(self):
+        while True:
+            try:
+                task = task_queue.get(timeout=1)
+                if task is None:
+                    break
+                chat_id, user_message, user_id = task
+                self.process_message(chat_id, user_message)
+            except:
+                time.sleep(0.1)
 
 
 logger.info("Chats update...")
@@ -63,6 +144,8 @@ for chat_id, chat_data in chats_data.items():
 with open('dp/chats.json', 'w') as f:
     json.dump(chats_data, f, indent=2)
 def setup_handlers(bot):
+    gosha_ai = GoshaAI(bot, API_AI)
+    
     @bot.message_handler(func=lambda message: message.forward_date is not None)
     def cmd_forward(message):
         return
@@ -306,7 +389,7 @@ def setup_handlers(bot):
                     running = False
                     referal_code = random.randint(100000, 999999)
                     for uid, data in referal.items():
-                        if referal_code == referal['code']:
+                        if referal_code == referal.get('code'):
                             running = True
                 
                 referal[str(user_id)] = {}
@@ -3170,6 +3253,33 @@ def setup_handlers(bot):
 
         bot.reply_to(msg, text)
 
+    @bot.message_handler(commands=['ai'])
+    def cmd_ai(msg):
+        user_id = msg.from_user.id
+        chat_id = msg.chat.id
+
+        if user_id in processing_status:
+            bot.reply_to(msg, "Wait...")
+            return
+
+        processing_status[user_id] = True
+        try:
+            task_queue.put((chat_id, msg.text[3:], user_id))
+        except Exception as e:
+            bot.reply_to(msg, f"ERROR: {type(e).__name__}: {e}")
+            del processing_status[user_id]
+            return
+
+        def clear_status():
+            time.sleep(0.5)
+            if user_id in processing_status:
+                del processing_status[user_id]
+        
+        threading.Thread(target=clear_status, daemon=True).start()
+
+    for _ in range(3):
+        threading.Thread(target=gosha_ai.worker, daemon=True).start()
+        logger.info(f"start Worker {_ + 1}")
  
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
     def text(message):
@@ -3946,5 +4056,6 @@ def setup_handlers(bot):
         
         save_other_data(other_data)
 
+        
     return bot
 
