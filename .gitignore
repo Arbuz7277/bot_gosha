@@ -1,4 +1,8 @@
 *.env
-/Logs
-/dp
+Logs/
+dp/
 !/dp/*.py
+*.log
+venv/
+.venv/
+bot_control.py

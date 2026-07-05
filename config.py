@@ -35,6 +35,14 @@ COMMISION_MORELESS = 1
 MORELESS_RTP = 90      # procent
 MAX_BID = 200          # coins
 
+MIN_AMOUNT_PAY = 1
+
+MAX_BET_CASINO = 1000
+MIN_BET_CASINO = 0.1
+MAX_MULTI_CASINO = 100
+MIN_MULTI_CASINO = 1.1
+RTP_CASINO = 0.95
+
 
 
 BALL_VARIABLES = ('Да, ', 'Нет, ', 'Возможно, ', 'Скорее всего, ', 'Не уверен, ', 'Маловероятно, ')

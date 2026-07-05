@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source venv/bin/activate
+
 cd dp
 python3 all_money.py &
 echo "'dp/all_money.py' has been activated."
