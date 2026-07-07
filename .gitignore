@@ -5,4 +5,9 @@ dp/
 *.log
 venv/
 .venv/
+*.swp
+*.swo
+__pycache__/
+*~
+
 bot_control.py
