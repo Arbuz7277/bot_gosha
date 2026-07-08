@@ -1,3 +1,7 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Arbuz.
+# handlers/__init__.py
+
 import os
 import time
 from datetime import datetime, timedelta, timezone

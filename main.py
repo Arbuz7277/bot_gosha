@@ -1,4 +1,6 @@
-# main.p
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Arbuz.
+# main.py
 
 import logging
 import telebot
@@ -7,7 +9,7 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO,
 format="%(asctime)s : %(name)s %(levelname)s [%(filename)s:%(lineno)s] - %(message)s")
 
-from handlers.commands import setup_handlers
+from handlers import setup_handlers
 from utils import *
 
 # Для улучшения читаемости логов
@@ -27,7 +29,7 @@ API_TOKEN = os.getenv('TOKEN')
 def create_bot():
     """Создание и настройка экземпляра бота"""
     bot = telebot.TeleBot(API_TOKEN)
-    bot = setup_handlers(bot)
+    setup_handlers(bot)
     return bot
 
 def main():

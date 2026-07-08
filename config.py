@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Arbuz.
+# config.py
 
 
 VERSION = "1.11.0"

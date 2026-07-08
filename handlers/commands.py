@@ -1,4 +1,7 @@
-# Обработчики команд бота
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Arbuz.
+# handlers/commands.py
+
 import telebot
 import logging
 logger = logging.getLogger(__name__)
@@ -149,7 +152,7 @@ for chat_id, chat_data in chats_data.items():
 
 with open('dp/chats.json', 'w') as f:
     json.dump(chats_data, f, indent=2)
-def setup_handlers(bot):
+def setup(bot):
     gosha_ai = GoshaAI(bot, API_AI)
     
     @bot.message_handler(func=lambda message: message.forward_date is not None)
