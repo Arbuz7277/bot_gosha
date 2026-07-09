@@ -1258,23 +1258,6 @@ def setup(bot):
         except:
             bot.reply_to(message, text)
 
-    @bot.message_handler(commands=['id'])
-    def cmd_my_id(message):
-        user_id = message.from_user.id
-        add_chat(message.chat.id)
-        if not str(user_id) in users:
-            register(message, bot, types, users)
-            return
-
-        try:
-            recipient = message.reply_to_message.from_user.id
-            gid = users[str(recipient)].get('gid')
-
-            bot.reply_to(message, f"ID пользователя: `{recipient}`\nID в Гоше: `{gid}`", parse_mode='markdown')
-        except:
-            gid = users[str(user_id)].get('gid')
-            bot.reply_to(message, f"Ваш ID: `{user_id}`\nID в Гоше: `{gid}`", parse_mode='markdown')
-
     @bot.message_handler(commands=['farm'])
     def cmd_farm(message):
         if bot_stat(message, bot): return
@@ -2471,16 +2454,6 @@ def setup(bot):
             bot.reply_to(message, text)
         except Exception as e:
             bot.reply_to(message, f"ERROR\n\n{type(e).__name__}: {e}")
-
-    @bot.message_handler(commands=['ping'])
-    def cmd_ping(message):
-        st = time.time()
-        bot.get_me()
-        end_time = time.time()
-        ping = (end_time - st) * 1000
-        ping2 = st - message.date
-
-        bot.reply_to(message, f"Ping: {int(ping)}ms\nPing: {int(ping2 * 1000)}ms\nUTC: {datetime.now().replace(microsecond=0)}")
 
     @bot.message_handler(commands=['info'])
     def cmd_info(message):
