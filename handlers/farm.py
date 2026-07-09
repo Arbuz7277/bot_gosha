@@ -11,12 +11,13 @@ import time
 import secrets
 import random
 from telebot import types
-from utils import bot_stat, add_chat, register, bank_load, bank_save, load_users, save_users, log, usernam
+from utils import bot_stat, add_chat, register, bank_load, bank_save, load_users, save_users, log, usernam, log_handler
 from config import MAX_BALANCE_FARM, FARM_RANGE, MULTI_FARM, FARM_TIME
 
 def setup(bot):
     @bot.message_handler(commands=['farm'])
-    def cmd_farm(message):
+    @log_handler
+    def farm(message):
         users = load_users()
         if bot_stat(message, bot): return
         user_id = message.from_user.id

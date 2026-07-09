@@ -13,7 +13,7 @@ from utils import log_handler
 def setup(bot):
     @bot.message_handler(commands=['ping'])
     @log_handler
-    def cmd_ping(msg):
+    def ping(msg):
         # Вычисление пинга
         st = time.time()
         bot.get_me()

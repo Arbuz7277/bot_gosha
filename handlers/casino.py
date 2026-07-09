@@ -18,11 +18,9 @@ from utils import bot_stat, add_chat, register, usernam, bank_load, bank_save, l
 logger = logging.getLogger(__name__)
 
 def setup(bot):
-    logger.info(f"{Path(__file__).name} loading")
-
     @bot.message_handler(func=lambda m: m.text and ('casino' in m.text.split()[0].lower() or 'деп' == m.text.split()[0].lower()) )
     @log_handler
-    def cmd_casino(msg):
+    def casino(msg):
         # Инициализация пользователя
         if bot_stat(msg, bot): return
 

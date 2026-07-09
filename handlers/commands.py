@@ -3361,7 +3361,6 @@ def setup(bot):
 
     for _ in range(3):
         threading.Thread(target=gosha_ai.worker, daemon=True).start()
-        logger.info(f"start Worker {_ + 1}")
 
     @bot.message_handler(commands=['ai'])
     def cmd_ai(msg):

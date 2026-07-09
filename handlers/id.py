@@ -10,7 +10,8 @@ from utils import log_handler, add_chat, load_users
 
 def setup(bot):
     @bot.message_handler(commands=['id'])
-    def cmd_id(msg):
+    @log_handler
+    def show_id(msg):
         user_id = msg.from_user.id
         add_chat(msg.chat.id)
         users = load_users()

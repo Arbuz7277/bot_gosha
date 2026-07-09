@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 def log_handler(func):
     """Декоратор для логирования вызова обработчиков"""
+    logger.info(f"Loading handler {func.__name__}")
+
     @wraps(func)
     def wrapper(message, *args, **kwargs):
         logger.info(f"Handler '{func.__name__}' called from {message.from_user.id}")

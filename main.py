@@ -13,7 +13,7 @@ import telebot
 from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO,
-format="%(asctime)s : %(name)s %(levelname)s [%(filename)s:%(lineno)s] - %(message)s")
+format="[%(asctime)s] : %(levelname)s '%(name)s'  [%(filename)s:%(lineno)s] - %(message)s")
 
 from handlers import setup_handlers
 
