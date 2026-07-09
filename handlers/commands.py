@@ -1339,7 +1339,9 @@ def setup(bot):
 
     @bot.message_handler(commands=['money', 'money@gosha2200m_bot'])
     def cmd_money(message):
+        users = load_user()
         if bot_stat(message, bot): return
+
         user_id = message.from_user.id
         add_chat(message.chat.id)
         if str(user_id) not in users:
@@ -3270,7 +3272,7 @@ def setup(bot):
         # Var
         size_token = 32
         
-        max_target = (2**16 - 1) << 208
+        max_target = (2**16 - 1) << 212
         
         data.setdefault('seed', secrets.token_bytes(size_token).hex())
         data.setdefault('target', int(max_target))

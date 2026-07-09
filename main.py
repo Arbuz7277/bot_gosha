@@ -2,6 +2,12 @@
 # Copyright (c) 2026 Arbuz.
 # main.py
 
+"""
+Главный файл бота.
+Он инициализирует бота, подключает обработчики и запускает поллинг.
+"""
+
+import os
 import logging
 import telebot
 from dotenv import load_dotenv
@@ -10,7 +16,6 @@ logging.basicConfig(level=logging.INFO,
 format="%(asctime)s : %(name)s %(levelname)s [%(filename)s:%(lineno)s] - %(message)s")
 
 from handlers import setup_handlers
-from utils import *
 
 # Для улучшения читаемости логов
 class Color:
@@ -29,7 +34,7 @@ API_TOKEN = os.getenv('TOKEN')
 def create_bot():
     """Создание и настройка экземпляра бота"""
     bot = telebot.TeleBot(API_TOKEN)
-    setup_handlers(bot)
+    bot = setup_handlers(bot)
     return bot
 
 def main():
@@ -44,8 +49,7 @@ def main():
     except KeyboardInterrupt:
         logger.info("Program finished.")
     except Exception as e:
-        logger.error(f'{Color.RED}Error: {e}{Color.RESET}. Restarting in 5s.')
-        time.sleep(5)
+        logger.fatal(f'{Color.RED}{type(e).__name__}: {e}{Color.RESET}.')
 
 if __name__ == "__main__":
     main()

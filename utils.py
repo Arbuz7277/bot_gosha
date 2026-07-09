@@ -14,6 +14,18 @@ import emoji
 import re
 import numexpr
 import uuid
+import logging
+from functools import wraps
+
+logger = logging.getLogger(__name__)
+
+def log_handler(func):
+    """Декоратор для логирования вызова обработчиков"""
+    @wraps(func)
+    def wrapper(message, *args, **kwargs):
+        logger.info(f"Handler '{func.__name__}' called from {message.from_user.id}")
+        return func(message, *args, **kwargs)
+    return wrapper
 
 class Color:
     RED = '\033[91m'
@@ -21,11 +33,25 @@ class Color:
     YELLOW = '\033[38;5;178m'
     RESET = '\033[0m'
 
+def save_users(data):
+    with open(USERS_DATA, 'w', encoding='utf-8') as f:
+        json.dump(
+            data,
+            f,
+            indent=4,
+            ensure_ascii=False
+        )
+
+def load_users():
+    with open(USERS_DATA, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+
 if not os.path.exists(USERS_DATA):
     with open(USERS_DATA, 'w') as f:
         f.write('{}')
-with open(USERS_DATA, 'r', encoding='utf-8') as f:
-    users = json.load(f)
+users = load_users()
 
 roulette_bids = {}
 
@@ -230,15 +256,6 @@ def admin_get(user_id):
     if user and user.get("admin", False):
         return True
     return False
-
-def save_users(data):
-    with open(USERS_DATA, 'w', encoding='utf-8') as f:
-        json.dump(
-            data,
-            f,
-            indent=4,
-            ensure_ascii=False
-        )
 
 def format_time_data(timestamp):
     msk_timezone = pytz.timezone('Europe/Moscow')

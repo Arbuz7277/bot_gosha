@@ -18,6 +18,8 @@ DICE_PATH = 'dp/dice.json'
 OTHER_DATA = 'dp/other_data.json'
 ROULETTE_DATA = 'dp/roulette.json'
 TRANSFER_DATA = 'dp/transfers.json'
+MINE_DATA = 'dp/mine_data.json'
+MINE_HISTORY = 'dp/mine_history.json'
 
 
 FARM_TIME = 60 * 60 * 2    # seconds
