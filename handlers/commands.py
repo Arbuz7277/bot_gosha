@@ -1320,35 +1320,6 @@ def setup(bot):
             else:
                 bot.reply_to(message, f'✅ <b>Успешно!</b>\n\nВы нафармили {money:.2f} {get_coin_form(money)}.\nВаш баланс: {round(user['money'], 2)} {get_coin_form(round(user['money'], 2))}', parse_mode='HTML')
 
-    @bot.message_handler(commands=['money', 'money@gosha2200m_bot'])
-    def cmd_money(message):
-        users = load_user()
-        if bot_stat(message, bot): return
-
-        user_id = message.from_user.id
-        add_chat(message.chat.id)
-        if str(user_id) not in users:
-            register(message, bot, types, users)
-            return
-        user = users[str(user_id)]
-        hide_balance = False
-        if user.get('settings'):
-            hide_balance = user['settings']['confid']['hide_balance']
-        bank_update(user_id, databank, users)
-
-        money = round(user.get('money', 0), 2)
-
-        if hide_balance:
-            bot.send_message(user_id, f"💰 Ваш баланс: {money} {get_coin_form(money)}.")
-            bot.reply_to(message, f'💰 Смотрите баланс в <a href="t.me/gosha2200m_bot">ЛС</a>', parse_mode='HTML', disable_web_page_preview=True)
-            return
-
-        text = f"💰 Ваш баланс: {money} {get_coin_form(money)}.\n\n"
-
-        if time.time() - user['farm'] > FARM_TIME:
-            text += "Введите /farm для фарма коинов"
-        bot.reply_to(message, text)
-
     @bot.message_handler(commands=['pay'])
     def cmd_pay(msg):
         if bot_stat(msg, bot): return

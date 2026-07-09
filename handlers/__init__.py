@@ -19,12 +19,14 @@ from handlers.farm import setup as farm_setup
 from handlers.ping import setup as ping_setup
 from handlers.id import setup as id_setup
 from handlers.message import setup as message_setup
+from handlers.balance import setup as balance_setup
 
 def setup_handlers(bot):
     """Инициализация всех обработчиков в функции"""
     bot = ping_setup(bot)
     bot = id_setup(bot)
     bot = message_setup(bot)
+    bot = balance_setup(bot)
 
     bot = commands_setup(bot)
 
