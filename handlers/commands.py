@@ -3732,27 +3732,6 @@ def setup(bot):
                 databank['money'] += bid
                 bank_save(databank)
 
-            elif text in ['balance', 'баланс', 'коины', 'балик', 'бабки', 'монеты', 'кошелек', 'бал']:
-                if bot_stat(message, bot): return
-                user_id = message.from_user.id
-                add_chat(message.chat.id)
-                if str(user_id) not in users:
-                    register(message, bot, types, users)
-                    return
-                user = users[str(user_id)]
-                hide_balance = False
-                if user.get('settings'):
-                    hide_balance = user['settings']['confid']['hide_balance']
-                bank_update(user_id, databank, users)
-
-                money = round(user.get('money', 0), 2)
-
-                if hide_balance:
-                    bot.send_message(user_id, f"💰 Ваш баланс: {money} {get_coin_form(money)}.")
-                    bot.reply_to(message, f'💰 Смотрите баланс в <a href="t.me/gosha2200m_bot">ЛС</a>', parse_mode='HTML', disable_web_page_preview=True)
-                    return
-                bot.reply_to(message, f"💰 Ваш баланс: {money} {get_coin_form(money)}.")
-
             elif text in ['farm', 'farma', 'фарм', 'заработать', 'поработать', 'работа', 'добыть', 'нафармить']:
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
