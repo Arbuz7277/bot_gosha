@@ -10,8 +10,9 @@
 import time
 import secrets
 import random
-from utils import bot_stat, add_chat, register, bank_load, bank_save, load_user, save_users, log
-from config import MAX_BALANCE_FARM, FARM_RANGE, MULTI_FARM
+from telebot import types
+from utils import bot_stat, add_chat, register, bank_load, bank_save, load_users, save_users, log, usernam
+from config import MAX_BALANCE_FARM, FARM_RANGE, MULTI_FARM, FARM_TIME
 
 def setup(bot):
     @bot.message_handler(commands=['farm'])
@@ -23,8 +24,10 @@ def setup(bot):
         if str(user_id) not in users:
             register(message, bot, types, users)
             return
+        usernam(user_id, bot)
 
         user = users[str(user_id)]
+        databank = bank_load()
 
         if user['money'] > MAX_BALANCE_FARM:
             bot.reply_to(message, '❌ Фармить возможно только если у вас баланс меньше 1000 коинов!')
@@ -34,13 +37,10 @@ def setup(bot):
         if user.get('settings'):
             hide_balance = user['settings']['confid']['hide_balance']
 
-        databank = bank_load()
-        bank_update(user_id, databank, users)
         if databank['money'] < 50:
             bot.reply_to(message, 'Недостаточно средств на балансе банка.')
             return
 
-        usernam(user_id, bot)
 
         time_start = user.get('farm', 0)
 
