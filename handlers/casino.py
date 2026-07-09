@@ -23,9 +23,6 @@ def setup(bot):
     @bot.message_handler(func=lambda m: m.text and ('casino' in m.text.split()[0].lower() or 'деп' == m.text.split()[0].lower()) )
     @log_handler
     def cmd_casino(msg):
-        if msg.from_user.id not in OWNER:
-            bot.reply_to(msg, "Команда на стадии разрабоки...")
-            return
         # Инициализация пользователя
         if bot_stat(msg, bot): return
 
@@ -113,11 +110,11 @@ def setup(bot):
             # Выигрыш
             add_money(user_db, win)
             log(user.id, f"Casino: [WIN] {bet} coins -> {win} ({multi}x) coins (+{win - bet})")
-            bot.reply_to(msg, f"✅ *Успех!*\n\nВы выиграли {win} коинов! (+{win - bet}, {multi}x)", parse_mode='markdown')
+            bot.reply_to(msg, f"✅ *Успех!*\n\nВы выиграли {win:,.2f} коинов! (+{(win - bet):,.2f}, {multi}x)", parse_mode='markdown')
         else:
             # Проигрыш
             log(user.id, f"Casino: [LOSS] {bet} coins -> 0 ({multi}x) coins ({-bet})")
-            bot.reply_to(msg, f"❌ *Неудача!*\n\nВы получили 0 коинов! ({-bet}, {multi}x)", parse_mode='markdown')
+            bot.reply_to(msg, f"❌ *Неудача!*\n\nВы получили 0 коинов! ({-bet:,.2f}, {multi}x)", parse_mode='markdown')
 
         save_users(users)
 

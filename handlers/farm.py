@@ -65,5 +65,19 @@ def setup(bot):
         save_users(users)
         bank_save(databank)
         log(user_id, f"Got {money} coins from /farm")
+        
+        # Вывод информации пользователю
+        if p < 0.01:
+            if hide_balance:
+                bot.reply_to(message, f'✅ <b>Удача на вашей стороне!</b>\n\nВы нафармили {money:.2f} ({MULTI_FARM}x) {get_coin_form(money)}. Смотрите баланс с помощью команды /money', parse_mode='HTML')
+            else:
+                bot.reply_to(message, f'✅ <b>Удача на вашей стороне!</b>\n\nВы нафармили {money:.2f} ({MULTI_FARM}x) {get_coin_form(money)}.\nВаш баланс: {round(user['money'], 2)} {get_coin_form(round(user['money'], 2))}', parse_mode='HTML')
+        else:
+            if hide_balance:
+                bot.reply_to(message, f'✅ <b>Успешно!</b>\n\nВы нафармили {money:.2f} {get_coin_form(money)}. Смотрите баланс с помощью команды /money', parse_mode='HTML')
+            else:
+                bot.reply_to(message, f'✅ <b>Успешно!</b>\n\nВы нафармили {money:.2f} {get_coin_form(money)}.\nВаш баланс: {round(user['money'], 2)} {get_coin_form(round(user['money'], 2))}', parse_mode='HTML')
+
+
 
     return bot

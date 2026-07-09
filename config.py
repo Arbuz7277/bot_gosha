@@ -25,6 +25,7 @@ MINE_HISTORY = 'dp/mine_history.json'
 FARM_TIME = 60 * 60 * 2    # seconds
 MULTI_FARM = 4
 FARM_RANGE = (200, 1000)
+MAX_BALANCE_FARM = 1000
 
 QUOTES_PER_PAGE = 6
 
