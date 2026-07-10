@@ -6,6 +6,8 @@ from pathlib import Path
 
 
 VERSION = "1.11.0"
+EMAIL = "gosha.telegrambot@gmail.com"
+GITHUB = "https://github.com/Arbuz7277/bot_gosha"
 
 
 OWNER = (8400317551,)

@@ -1108,10 +1108,10 @@ def setup(bot):
 
     @bot.message_handler(commands=['profile'])
     def cmd_profile(message):
+        users = load_users()
         if bot_stat(message, bot): return
         user_id = message.from_user.id
         add_chat(message.chat.id)
-        bank_update(user_id, databank, users)
 
         if str(user_id) not in users:
             register(message, bot, types, users)
@@ -1445,6 +1445,7 @@ def setup(bot):
 
     @bot.message_handler(func=lambda m: m.text and ('casino' in m.text.split()[0].lower() or 'деп' == m.text.split()[0].lower()) )
     def cmd_casino(msg):
+        users = load_users()
         # Инициализация пользователя
         if bot_stat(msg, bot): return
 
@@ -1529,11 +1530,13 @@ def setup(bot):
             # Выигрыш
             add_money(user_db, win)
             log(user.id, f"Casino: [WIN] {bet} coins -> {win} ({multi}x) coins (+{win - bet})")
-            bot.reply_to(msg, f"✅ *Успех!*\n\nВы выиграли {win:,.2f} коинов! (+{(win - bet):,.2f}, {multi}x)", parse_mode='markdown')
+            bot.reply_to(msg, f"✅ *Успех!*\n\nВы выиграли {win:.2f} коинов! (+{(win - bet):.2f}, {multi}x)", parse_mode='markdown')
         else:
             # Проигрыш
             log(user.id, f"Casino: [LOSS] {bet} coins -> 0 ({multi}x) coins ({-bet})")
-            bot.reply_to(msg, f"❌ *Неудача!*\n\nВы получили 0 коинов! ({-bet:,.2f}, {multi}x)", parse_mode='markdown')
+            bot.reply_to(msg, f"❌ *Неудача!*\n\nВы получили 0 коинов! ({-bet:.2f}, {multi}x)", parse_mode='markdown')
+
+        save_users(users)
 
     @bot.message_handler(commands=['help_casino'])
     def cmd_help_casino(message):
@@ -3311,6 +3314,8 @@ def setup(bot):
  
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
     def text(message):
+        users = load_users()
+
         user_id = message.from_user.id
         add_chat(message.chat.id)
         top_add(user_id, message.chat.id)
@@ -3385,6 +3390,7 @@ def setup(bot):
                     bot.reply_to(message, "Нужно как минимум 2 пользователя в чате!")
             
             elif args[0] in ['.казино', 'казик', 'деп', 'депнуть', 'casino'] and len(args) >= 2 and False:
+                return
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)
@@ -3523,6 +3529,7 @@ def setup(bot):
                 bank_save(databank)
 
             elif text in ['farm', 'farma', 'фарм', 'заработать', 'поработать', 'работа', 'добыть', 'нафармить']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)
@@ -3583,7 +3590,10 @@ def setup(bot):
                     else:
                         bot.reply_to(message, f'✅ <b>Успешно!</b>\n\nВы нафармили {money:.2f} {get_coin_form(money)}.\nВаш баланс: {round(user['money'], 2)} {get_coin_form(round(user['money'], 2))}', parse_mode='HTML')
 
+                save_users(users)
+
             elif text in ['profile', 'профиль', 'проф', 'акк', 'аккаунт', '.инфа', 'моя инфа', 'мой профиль']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)
@@ -3649,6 +3659,7 @@ def setup(bot):
                     bot.reply_to(message, text)
 
             elif args[0] in ['pay', 'перевести', 'перевод', 'скинуть', 'перекинуть']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)
@@ -3720,6 +3731,7 @@ def setup(bot):
                 bot.reply_to(message, f"Version: {VERSION}")
             
             elif text in ['top', 'топ чата', 'топ чат']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = str(message.from_user.id)
                 add_chat(message.chat.id)
@@ -3789,6 +3801,7 @@ def setup(bot):
                 bot.reply_to(message, text, parse_mode="HTML")
                 
             elif text in ['global_top', 'глобал топ', 'глобальный топ']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)
@@ -3835,6 +3848,7 @@ def setup(bot):
                 bot.reply_to(message, text + f"</blockquote>\n\nВы на {top} месте из {len(chat_users)}.", parse_mode='HTML')
 
             elif text in ['удалить аккаунт', 'удалить акк']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = str(message.from_user.id)
 
@@ -3849,11 +3863,13 @@ def setup(bot):
                 bot.reply_to(message, "<b>Подтвердите удаление аккаунта.</b>\nПосле удаления все данные будут удалены!", parse_mode='HTML', reply_markup=markup)
 
             elif text in ['.имя', 'мое имя']:
+                users = load_users()
                 nick = users[str(user_id)].get('name', 'Unknown')
 
                 bot.reply_to(message, f'Твой ник: {nick}')
 
             elif args[0] in ['.кости', 'дайс']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
 
@@ -3912,6 +3928,7 @@ def setup(bot):
                     bot.send_message(message.chat.id, f'<a href="tg://user?id={rid}">{u2['name']}</a>, <a href="tg://user?id={user_id}">{u1['name']}</a> хочет сыграть с вами в кости на {int(bid)} {get_coin_form(int(bid))}.', parse_mode='HTML', reply_markup=mar)
 
             elif args[0] in ['рулетка', 'крутить']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)
@@ -3984,6 +4001,7 @@ def setup(bot):
                 save_roulette(roulette_bids)
 
             elif args[0] in ['бим']:
+                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)

@@ -10,12 +10,20 @@ import time
 from utils import log_handler, load_users, add_chat, register, bot_stat, get_coin_form
 from config import FARM_TIME, MAX_BALANCE_FARM
 from telebot import types
+import logging
+
+logger = logging.getLogger(__name__)
 
 def setup(bot):
     @bot.message_handler(commands=['money', 'balance', 'баланс', 'бал'])
     @log_handler
     def balance(message):
         users = load_users()
+        if not users:
+            logger.error("Users is None")
+            bot.reply_to(message, "Не удалось подключиться к базе данных")
+            return
+
         if bot_stat(message, bot): return
 
         user_id = message.from_user.id

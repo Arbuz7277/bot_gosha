@@ -19,21 +19,6 @@ from functools import wraps
 
 logger = logging.getLogger(__name__)
 
-def log_handler(func):
-    """Декоратор для логирования вызова обработчиков"""
-    logger.info(f"Loading handler {func.__name__}")
-
-    @wraps(func)
-    def wrapper(message, *args, **kwargs):
-        logger.info(f"Handler '{func.__name__}' called from {message.from_user.id}")
-        return func(message, *args, **kwargs)
-    return wrapper
-
-class Color:
-    RED = '\033[91m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[38;5;178m'
-    RESET = '\033[0m'
 
 def save_users(data):
     with open(USERS_DATA, 'w', encoding='utf-8') as f:
@@ -44,10 +29,28 @@ def save_users(data):
             ensure_ascii=False
         )
 
+
 def load_users():
     with open(USERS_DATA, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+
+def log_handler(func):
+    """Декоратор для логирования вызова обработчиков"""
+    logger.info(f"Loading handler {func.__name__}")
+    @wraps(func)
+    def wrapper(message, *args, **kwargs):
+        logger.info(f"Handler '{func.__name__}' called from {message.from_user.id}")
+        return func(message, *args, **kwargs)
+    
+    return wrapper
+
+
+class Color:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[38;5;178m'
+    RESET = '\033[0m'
 
 
 if not os.path.exists(USERS_DATA):
@@ -150,6 +153,7 @@ def save_roulette(roulette_bids):
         json.dump(roulette_bids, f, indent=4)
 
 def usernam(user_id, bot):
+    users = load_users()
     user_info = bot.get_chat(user_id)
     user = users.get(str(user_id))
     if not user:
@@ -167,6 +171,7 @@ def save_other_data(other_data):
         json.dump(other_data, f, indent=4)
 
 def add_user(user_id, bot):
+    users = load_users()
     """Добавляет пользователя"""
     if str(user_id) in users:
         return False
@@ -253,6 +258,7 @@ def msg_all(text):
     return [on, er, bl, list_user['chat']]
 
 def admin_get(user_id):
+    users = load_users()
     user = users.get(str(user_id))
 
     if user and user.get("admin", False):
@@ -279,6 +285,7 @@ def format_time_data_t(timestamp):
 
 
 def top_add(user_id, chat):
+    users = load_users()
     chat_id = int(chat)
 
     if chat_id > 0:
@@ -308,6 +315,7 @@ def log(user_id, text):
         f.write(f'[{format_time_data_t(time.time())}] {text}\n')
 
 def get_premium(user_id):
+    users = load_users()
     user = users.get(str(user_id), False)
 
     if not user:
@@ -525,6 +533,7 @@ def unmute_user(message, bot, chat_id, user_id):
         return False, e
 
 def gid_add(user_id):
+    users = load_users()
     user = users[str(user_id)]
     if user.get('gid'):
         return

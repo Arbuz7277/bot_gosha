@@ -21,13 +21,13 @@ def setup(bot):
     @bot.message_handler(func=lambda m: m.text and ('casino' in m.text.split()[0].lower() or 'деп' == m.text.split()[0].lower()) )
     @log_handler
     def casino(msg):
+        users = load_users()
         # Инициализация пользователя
         if bot_stat(msg, bot): return
 
         add_chat(msg.chat.id)
         user = msg.from_user
 
-        users = load_users()
         user_db = users[str(user.id)]
         if str(user.id) not in users:
             register(msg, bot, types, users)
@@ -45,7 +45,6 @@ def setup(bot):
             user['money'] += money
             databank['money'] -= money
             bank_save(databank)
-            save_users(users)
 
         # Проверка на количество аргументов
         args = msg.text.split()
@@ -108,13 +107,12 @@ def setup(bot):
             # Выигрыш
             add_money(user_db, win)
             log(user.id, f"Casino: [WIN] {bet} coins -> {win} ({multi}x) coins (+{win - bet})")
-            bot.reply_to(msg, f"✅ *Успех!*\n\nВы выиграли {win:,.2f} коинов! (+{(win - bet):,.2f}, {multi}x)", parse_mode='markdown')
+            bot.reply_to(msg, f"✅ *Успех!*\n\nВы выиграли {win:.2f} коинов! (+{(win - bet):.2f}, {multi}x)", parse_mode='markdown')
         else:
             # Проигрыш
             log(user.id, f"Casino: [LOSS] {bet} coins -> 0 ({multi}x) coins ({-bet})")
-            bot.reply_to(msg, f"❌ *Неудача!*\n\nВы получили 0 коинов! ({-bet:,.2f}, {multi}x)", parse_mode='markdown')
+            bot.reply_to(msg, f"❌ *Неудача!*\n\nВы получили 0 коинов! ({-bet:.2f}, {multi}x)", parse_mode='markdown')
 
         save_users(users)
-
 
     return bot

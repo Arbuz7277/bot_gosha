@@ -20,6 +20,7 @@ from handlers.ping import setup as ping_setup
 from handlers.id import setup as id_setup
 from handlers.message import setup as message_setup
 from handlers.balance import setup as balance_setup
+from handlers.about import setup as about_setup
 
 def setup_handlers(bot):
     """Инициализация всех обработчиков в функции"""
@@ -27,6 +28,7 @@ def setup_handlers(bot):
     bot = id_setup(bot)
     bot = message_setup(bot)
     bot = balance_setup(bot)
+    bot = about_setup(bot)
 
     bot = commands_setup(bot)
 
