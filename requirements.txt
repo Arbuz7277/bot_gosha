@@ -3,3 +3,4 @@ dotenv
 pytz
 emoji
 matplotlib
+numexpr

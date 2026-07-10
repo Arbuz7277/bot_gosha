@@ -8,7 +8,7 @@
 
 import time
 from utils import log_handler, load_users, add_chat, register, bot_stat, get_coin_form
-from config import FARM_TIME
+from config import FARM_TIME, MAX_BALANCE_FARM
 from telebot import types
 
 def setup(bot):
@@ -40,7 +40,7 @@ def setup(bot):
         text = f"💰 Ваш баланс: {money:,.2f} {get_coin_form(money)}.\n\n"
 
         # Если фарм активен, сообщить
-        if time.time() - user['farm'] > FARM_TIME:
+        if time.time() - user['farm'] > FARM_TIME and money < MAX_BALANCE_FARM:
             text += "Введите /farm для фарма коинов!"
 
         bot.reply_to(message, text)
