@@ -2,24 +2,28 @@
 # Copyright (c) 2026 Arbuz.
 # config.py
 
+from pathlib import Path
+
 
 VERSION = "1.11.0"
 
 
 OWNER = (8400317551,)
 
+db = Path("dp")  # Директория с данными
+db.mkdir(exist_ok=True)
 
-REFERAL_FILE = 'dp/referal.json'
-USERS_DATA = 'dp/users.json'
-FILE_CHATID = 'dp/chat_id.json'
-BANK = 'dp/bank.json'
-SHOP_ITEMS = 'dp/shop_items.json'
-DICE_PATH = 'dp/dice.json'
-OTHER_DATA = 'dp/other_data.json'
-ROULETTE_DATA = 'dp/roulette.json'
-TRANSFER_DATA = 'dp/transfers.json'
-MINE_DATA = 'dp/mine_data.json'
-MINE_HISTORY = 'dp/mine_history.json'
+REFERAL_FILE = db / Path("referal.json")
+USERS_DATA = db / Path("users.json")
+FILE_CHATID = db / Path("chat_id.json")
+BANK = db / Path("bank.json")
+SHOP_ITEMS = db / Path("shop_items.json")
+DICE_PATH = db / Path("dice.json")
+OTHER_DATA = db / Path("other_data.json")
+ROULETTE_DATA = db / Path("roulette.json")
+TRANSFER_DATA = db / Path("transfers.json")
+MINE_DATA = db / Path("mine_data.json")
+MINE_HISTORY = db / Path("mine_history.json")
 
 
 FARM_TIME = 60 * 60 * 2    # seconds

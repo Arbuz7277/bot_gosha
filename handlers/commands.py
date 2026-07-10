@@ -13,7 +13,6 @@ import pytz
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from queue import Queue
-from groq import Groq
 import matplotlib.pyplot as plt
 import io
 import secrets
@@ -21,17 +20,10 @@ import threading
 import logging
 import html
 import ast
-import numexpr
 import re
 import os
 import uuid
 import hashlib
-import ollama
-import asyncio
-
-client = ollama.AsyncClient()
-MODEL = "llama3.2"
-ai_work = False
 
 class Color:
     RED = '\033[91m'
@@ -42,85 +34,6 @@ class Color:
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-load_dotenv('secrets.env')
-API_AI = os.getenv('API_AI')
-
-# For AI
-task_queue = Queue()
-processing_status = {}
-
-class GoshaAI:
-    def __init__(self, bot, api):
-        self.bot = bot
-        self.client = Groq(api_key=api)
-
-        self.system_prompt = "You speak russia. You name - Gosha."
-
-    def load(self):
-        if not os.path.extsts('dp/ai_data.json'):
-            with open('dp/ai_data.json', 'w') as f: f.write('{}')
-        with open('dp/ai_data.json', 'r') as f:
-            return json.load(f)
-
-    def save(self, data):
-        with open('dp/ai_data.json', 'w') as f:
-            json.dump(f, data, indent=4)
-
-    def is_complex_query(self, message):
-        judge_messages = [
-            {"role": "system", "content": """Hello! Its query hard or easy?"""},
-            {"role": "user", "content": message}
-        ]
-
-        try:
-            response = self.client.chat.completions.create(
-                message=judge_messages,
-                model="llama-3.1-8b-instant",
-            )
-            answer = response.choices[0].message.content.lower().strip()
-            return answer.startswith("hard")
-        except:
-            return False
-
-    def process_message(self, char_id, user_message="Hello"):
-        try:
-            self.bot.send_chat_action(chat_id, 'typing')
-
-            use_complex = self.is_complex_query(user_message)
-            model = "llama-3.3-70b-versatile" if use_complex else "llama-3.1-8b-instant"
-
-            messages = [
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": user_message}
-            ]
-
-            response = self.client.chat.completions.create(
-                messages=messages,
-                model=model
-            )
-
-            reply = response.choices[0].message.content
-
-            if "<GOSHA_STOP>" in reply:
-                reply = "Sorry, I don't want to answer such topics."
-
-            self.bot.send_message(chat_id, reply)
-        except Exception as e:
-            logger.error(f"{type(e).__name__}: {e}")
-            self.bot.send_message(chat_id, "Sorry, try again")
-
-    def worker(self):
-        while True:
-            try:
-                task = task_queue.get(timeout=1)
-                if task is None:
-                    break
-                chat_id, user_message, user_id = task
-                self.process_message(chat_id, user_message)
-            except:
-                time.sleep(0.1)
-
 
 logger.info("Chats update...")
 if not os.path.exists('dp/chats.json'):
@@ -152,9 +65,10 @@ for chat_id, chat_data in chats_data.items():
 
 with open('dp/chats.json', 'w') as f:
     json.dump(chats_data, f, indent=2)
+
+
+
 def setup(bot):
-    gosha_ai = GoshaAI(bot, API_AI)
-    
     @bot.message_handler(func=lambda message: message.forward_date is not None)
     def cmd_forward(message):
         return
@@ -3305,131 +3219,7 @@ def setup(bot):
 
         bot.reply_to(msg, text)
 
-    @bot.message_handler(commands=['ai_old'])
-    def cmd_ai(msg):
-        return
-        user_id = msg.from_user.id
-        chat_id = msg.chat.id
-
-        if user_id in processing_status:
-            bot.reply_to(msg, "Wait...")
-            return
-
-        processing_status[user_id] = True
-        try:
-            task_queue.put((chat_id, msg.text[3:], user_id))
-        except Exception as e:
-            bot.reply_to(msg, f"ERROR: {type(e).__name__}: {e}")
-            del processing_status[user_id]
-            return
-
-        def clear_status():
-            time.sleep(0.5)
-            if user_id in processing_status:
-                del processing_status[user_id]
-        
-        threading.Thread(target=clear_status, daemon=True).start()
-
-    for _ in range(3):
-        threading.Thread(target=gosha_ai.worker, daemon=True).start()
-
-    @bot.message_handler(commands=['ai'])
-    def cmd_ai(msg):
-        try:
-            global ai_work
-
-            if ai_work:
-                bot.reply_to(msg, "Извините, модель сейчас работает над другой задачей. Попробуйте позже.")
-                return
-            MODEL = "codellama"
-
-            args = msg.text.split(' ', 1)
-            if len(args) != 2:
-                return
-            ai_work = True
-            
-            path = "dp/ai_chats.json"
-            if not os.path.exists(path):
-                with open(path, 'w') as f:
-                    f.write("{}")
-
-            with open(path, 'r') as f:
-                data = json.load(f)
-
-            sent_msg = bot.send_message(msg.chat.id, "Думаю над ответом...")
-            bot.send_chat_action(msg.chat.id, 'typing')
-            full_answer = ""
-            last_update = time.time()
-
-            text = args[1]
-
-            chat_id = str(msg.chat.id)
-            system = {'role': 'system', 'content': 'You are Gosha. You speak russia'}
-            data.setdefault(chat_id, [system]).append({'role': 'user', 'content': f"Prompt from @{msg.from_user.id}: {text}"})
-
-
-            try:
-                stream = ollama.chat(
-                    model=MODEL,
-                    messages=data[chat_id],
-                    options={
-                        'temperature': 0.8
-                    },
-                    stream=True
-                )
-            except Exception as e:
-                ai_work = False
-                bot.send_message(msg.chat.id, f"ERROR\n\n{type(e).__name__}: {e}")
-                return
-
-            for chunk in stream:
-                if 'message' in chunk and 'content' in chunk['message']:
-                    content = chunk['message']['content']
-                    full_answer += content
-
-                    if (time.time() - last_update) > 3:
-                        try:
-                            bot.edit_message_text(
-                                chat_id=msg.chat.id,
-                                message_id=sent_msg.message_id,
-                                text=full_answer
-                            )
-                            last_update = time.time()
-                        except:
-                            pass
-            
-            answer_ai = full_answer[:4000]
-            # bot.edit_message_text(sent_msg.chat.id, sent_msg.message_id, f"{answer_ai}\n\n-----\nМодель: {MODEL}")
-            try:
-                bot.edit_message_text(chat_id=msg.chat.id, message_id=sent_msg.message_id, text=f"{answer_ai}\n\n{'-' * 10}\nМодель: `{MODEL}`", parse_mode='Markdown')
-            except Exception as e:
-                logger.warning(f"Error in format text: {type(e).__name__}: {e}")
-                try:
-                    bot.edit_message_text(chat_id=msg.chat.id, message_id=sent_msg.message_id, text=f"{answer_ai}\n\n{'-' * 10}\nМодель: {MODEL}")
-                except:
-                    bot.send_message(msg.chat.id, f"{answer_ai}\n\n-----\nМодель: {MODEL}")
-            ai_work = False
-
-            data[chat_id].append({'role': 'assistant', 'content': answer_ai})
-            with open(path, 'w') as f:
-                json.dump(data, f, indent=4)
-        except Exception as e:
-            bot.send_message(msg.chat.id, f'Sorry, try again.\n\nException: {type(e).__name__}: {e}', parse_mode='markdown')
-            raise
-
-    @bot.message_handler(func=lambda m: m.text and ('/gosha' == m.text.split(' ', 1)[0].lower()))
-    def cmd_gosha(msg):
-        try:
-            args = msg.text.split(' ', 1)
-            if len(args) != 2:
-                return
-            text = args[1]
-
-            bot.send_message(msg.chat.id, "Hello! Im Gosha. How I can help you?")
-        except Exception as e:
-            bot.send_message(msg.chat.id, f"Exception: {type(e).__name__}: {e}")
-            raise
-      
+     
     @bot.message_handler(commands=['user_info'])
     def cmd_my_info(msg):
         info = msg.from_user.to_dict()

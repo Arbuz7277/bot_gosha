@@ -12,8 +12,10 @@ import logging
 import telebot
 from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO,
-format="[%(asctime)s] : %(levelname)s '%(name)s'  [%(filename)s:%(lineno)s] - %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] : %(levelname)s '%(name)s'  [%(filename)s:%(lineno)s] - %(message)s"
+)
 
 from handlers import setup_handlers
 
@@ -26,10 +28,13 @@ class Color:
 
 logger = logging.getLogger(__name__)
 
-logger.info("Program is starting")
-
-load_dotenv('secrets.env')
+# Загрузка АПИ бота.
+load_dotenv()
 API_TOKEN = os.getenv('TOKEN')
+
+if not API_TOKEN:
+    logger.fatal("Not found API token fot bot. Write API to file '.env'")
+    exit(1)
 
 def create_bot():
     """Создание и настройка экземпляра бота"""
