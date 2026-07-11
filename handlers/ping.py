@@ -21,6 +21,6 @@ def setup(bot):
 
         ping_to_server = (end_time - st) * 1000  # Пинг от сервера до телеграма
 
-        bot.reply_to(msg, f"Ping: {int(ping_to_server)} ms\nUTC: {datetime.now(timezone.utc).replace(microsecond=0)}")
+        bot.reply_to(msg, f"✨ Ping: {int(ping_to_server)} ms\n�� UTC: {datetime.now(timezone.utc).replace(microsecond=0)}")
  
     return bot
