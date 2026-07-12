@@ -26,7 +26,14 @@ ROULETTE_DATA = db / Path("roulette.json")
 TRANSFER_DATA = db / Path("transfers.json")
 MINE_DATA = db / Path("mine_data.json")
 MINE_HISTORY = db / Path("mine_history.json")
+BORROW_DATA = db / Path("borrow_data.json")
 
+MIN_AMOUNT_BORROW = 10
+MAX_AMOUNT_BORROW = 10_000
+MIN_TERM_BORROW = 1
+MAX_TERM_BORROW = 336
+MIN_PERCENT_BORROW = 0
+MAX_PERCENT_BORROW = 100
 
 FARM_TIME = 60 * 60 * 2    # seconds
 MULTI_FARM = 4

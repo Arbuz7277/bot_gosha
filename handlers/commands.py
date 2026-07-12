@@ -73,6 +73,10 @@ def setup(bot):
     def cmd_forward(message):
         return
 
+    # Запуск проверки долгов в потоке
+    thread = threading.Thread(target=checker_borrow, args=(bot,), daemon=True)
+    thread.start()
+
     @bot.callback_query_handler(func=lambda call: True)
     def callback(call):
         owner_id = None
@@ -2033,6 +2037,153 @@ def setup(bot):
         
         save_users(users)
         bank_save(databank)
+
+    @bot.message_handler(commands=['borrow'])
+    @log_handler
+    def cmd_borrow(msg):
+        """Взять в долг у другого пользователя"""
+        # Проверка аргументов
+        args = msg.text.split()
+
+        if len(args) != 5:
+            bot.reply_to(msg, "Используйте команду: `/borrow <сумма> <срок в часах> <процент> <юзернейм>`", parse_mode='markdown')
+            return
+        
+        try:
+            amount = round(float(args[1]), 2)  # Взять сумму и округлить до сотых
+            term = int(args[2])  # Получить срок в часах
+            percent = int(args[3])  # Процент
+            username = args[4].replace('@', '', 1)  # Юзернейм
+        except ValueError:
+            bot.reply_to(msg, f"*Вы ввели неверные данные!* Сумма и срок должны быть числами.", parse_mode='markdown')
+            return
+
+        # Проверка значений аргументов
+        if amount < MIN_AMOUNT_BORROW:
+            bot.reply_to(msg, f"*Сумма не может быть меньше {MIN_AMOUNT_BORROW}!*", parse_mode='markdown')
+            return
+        elif amount > MAX_AMOUNT_BORROW:
+            bot.reply_to(msg, f"*Сумма не может быть больше {MAX_AMOUNT_BORROW}!*", parse_mode='markdown')
+            return
+
+        if term < MIN_TERM_BORROW:
+            bot.reply_to(msg, f"*Срок не может быть меньше {MIN_TERM_BORROW}!*", parse_mode='markdown')
+            return
+        elif term > MAX_TERM_BORROW:
+            bot.reply_to(msg, f"*Срок не может быть больше {MAX_TERM_BORROW}!*", parse_mode='markdown')
+            return
+
+        if percent < MIN_PERCENT_BORROW:
+            bot.reply_to(msg, f"*Процент не может быть меньше {MIN_PERCENT_BORROW}%!*", parse_mode='markdown')
+            return
+        elif percent > MAX_PERCENT_BORROW:
+            bot.reply_to(msg, f"*Процент не может быть больше {MAX_PERCENT_BORROW}%!*", parse_mode='markdown')
+            return
+        
+
+        requests = other_data.setdefault('borrow', [])
+
+        # Получение Telegram ID пользователей
+        user_id = msg.from_user.id
+        recipient_id = None
+        for uid, user in users.items():
+            if user.get('username') == username:
+                recipient_id = int(uid)
+
+        if not recipient_id:
+            bot.reply_to(msg, f"*Пользователь @{username} не найден!*", parse_mode='markdown')
+            return
+
+        # Проверка на существование средств
+        if users[str(recipient_id)]['money'] < amount:
+            bot.reply_to(msg, "*У пользователя недостаточно средств!*", parse_mode='markdown')
+            return
+
+        # Проверка на наличие запроса
+        for request in requests:
+            if request['sender'] == user_id and request['recipient'] == recipient_id:
+                bot.reply_to(msg, "*Вы уже отправили этому пользователю запрос!*", parse_mode='markdown')
+                return
+
+        # Создание запроса
+        requests.append({})
+        request = requests[-1]
+
+        amount_with_percent = amount + (amount * (percent / 100))
+
+        request['sender'] = user_id  # Отправитель
+        request['recipient'] = recipient_id  # Получатель
+        request['amount'] = amount
+        request['percent'] = percent / 100
+        request['term'] = term * 60 * 60  # Срок в секундах
+        request['time'] = time.time()  # Время создания
+
+        bot.send_message(
+            msg.chat.id,
+            f"@{username}, у вас хотят взять в долг {amount} коинов на срок {term} часов под ставку {percent}%. "
+            f"После истечения срока вы получите обратно {amount_with_percent} коинов.\n"
+            f"Если вы согласны, введите команду <code>/borrow+ {user_id}</code>",
+            parse_mode='HTML'
+        )
+
+    @bot.message_handler(commands=['borrow+'])
+    @log_handler
+    def cmd_borror_plus(msg):
+        # Получение аргументов
+        args = msg.text.split()
+        if len(args) != 2:
+            bot.reply_to(msg, f"*Не указан айди!*", parse_mode='markdown')
+            return
+        
+        # Проверка на тип аргументов
+        try:
+            request_id = int(args[1])
+        except ValueError:
+            bot.reply_to(msg, f"*Айди должен быть числом!*", parse_mode='markdown')
+            return
+
+
+    
+        # Поиск запроса
+        requests = other_data.setdefault('borrow', [])
+        request = None
+        for i, r in enumerate(requests):
+            if r['sender'] == request_id and r['recipient'] == msg.from_user.id:
+                request = requests.pop(i)
+
+        if not request:
+            bot.reply_to(msg, "*Предложение не найдено!*", parse_mode='markdown')
+            return
+        
+        # Если нет файла, создаем
+        if not BORROW_DATA.exists():
+            with open(BORROW_DATA, 'w') as f:
+                json.dump([], j)
+
+        with open(BORROW_DATA, 'r') as f:
+            data = json.load(f)
+
+        request['time'] = time.time()
+        request['amount'] += request['amount'] * request['percent']
+        data.append(request)
+
+        with open(BORROW_DATA, 'w') as f:
+            json.dump(data, f, indent=4)
+
+        # Переводим средства
+        users[str(request['sender'])]['money'] += request['amount']
+        users[str(request['recipient'])]['money'] -= request['amount']
+        save_users(users)
+
+        sender = users[str(request['sender'])]
+
+        bot.reply_to(
+            msg,
+            f"*Успешно!* Вы выдали {request['amount']} коинов пользователю @{sender.get('username', "Unknown")} на срок {request['term'] / 60 / 60} часов.\n"
+            f"После истечения срока все средства автоматически будут возвращены вам.",
+            parse_mode='markdown'
+        )
+
 
     @bot.message_handler(commands=['ad'])
     def cmd_ad(message):

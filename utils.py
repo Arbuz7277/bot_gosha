@@ -52,6 +52,47 @@ class Color:
     YELLOW = '\033[38;5;178m'
     RESET = '\033[0m'
 
+def checker_borrow(bot):
+    """Проверяет все долги и автоматически их списывает"""
+    while True:
+        try:
+            with open(BORROW_DATA, 'r') as f:
+                data = json.load(f)
+            
+            deleted = []  # Список индексов, которых нужно удалить
+
+            for i, request in enumerate(data):
+                if time.time() - request['time'] > request['term']:
+                    users = load_users()
+
+                    sender = users[str(request['sender'])]
+                    recipient = users[str(request['recipient'])]
+
+                    sender['money'] -= request['amount']
+                    recipient['money'] += request['amount']
+
+                    deleted.append(i)
+                    save_users(users)
+
+                    # Отправка уведомлений
+                    try:
+                        bot.send_message(sender['id'], f"Срок истек! Вы вернули пользователю @{recipient.get('username', 'Unknown')} {request['amount']} коинов.")
+                        bot.send_message(recipient['id'], f"Срок истек! Вы полчили от пользователя @{sender.get('username', 'Unknown')} {request['amount']} коинов.")
+                    except Exception as e:
+                        logger.warning(f"Failed to send notification: {type(e).__name__}: {e}")
+
+            for i in deleted:
+                data.pop(i)
+
+            with open(BORROW_DATA, 'w') as f:
+                json.dump(data, f, indent=4)
+
+            time.sleep(30)
+        except Exception as e:
+            logger.error(f"Error in background thread: {type(e).__name__}: {e}")
+            time.sleep(30)
+
+
 
 if not os.path.exists(USERS_DATA):
     with open(USERS_DATA, 'w') as f:
