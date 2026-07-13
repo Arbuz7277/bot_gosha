@@ -1178,6 +1178,7 @@ def setup(bot):
 
     @bot.message_handler(commands=['farm'])
     def cmd_farm(message):
+        users = load_users()
         if bot_stat(message, bot): return
         user_id = message.from_user.id
         add_chat(message.chat.id)
@@ -2095,7 +2096,11 @@ def setup(bot):
             return
 
         # Проверка на существование средств
-        if users[str(recipient_id)]['money'] < amount:
+        if users[str(user_id)]['money'] < 0:
+            bot.reply_to(msg, "*Брать долг невозможно, имея отрицательный баланс!* Найдите другой источник дохода.", parse_mode='markdown')
+            return
+
+        elif users[str(recipient_id)]['money'] < amount:
             bot.reply_to(msg, "*У пользователя недостаточно средств!*", parse_mode='markdown')
             return
 
@@ -2162,7 +2167,8 @@ def setup(bot):
 
         with open(BORROW_DATA, 'r') as f:
             data = json.load(f)
-
+        
+        amount = request['amount']
         request['time'] = time.time()
         request['amount'] += request['amount'] * request['percent']
         data.append(request)
@@ -2171,15 +2177,15 @@ def setup(bot):
             json.dump(data, f, indent=4)
 
         # Переводим средства
-        users[str(request['sender'])]['money'] += request['amount']
-        users[str(request['recipient'])]['money'] -= request['amount']
+        users[str(request['sender'])]['money'] += amount
+        users[str(request['recipient'])]['money'] -= amount
         save_users(users)
 
         sender = users[str(request['sender'])]
 
         bot.reply_to(
             msg,
-            f"*Успешно!* Вы выдали {request['amount']} коинов пользователю @{sender.get('username', "Unknown")} на срок {request['term'] / 60 / 60} часов.\n"
+            f"*Успешно!* Вы выдали {amount} коинов пользователю @{sender.get('username', "Unknown")} на срок {request['term'] / 60 / 60} часов.\n"
             f"После истечения срока все средства автоматически будут возвращены вам.",
             parse_mode='markdown'
         )

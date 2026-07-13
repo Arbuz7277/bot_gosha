@@ -56,6 +56,8 @@ def checker_borrow(bot):
     """Проверяет все долги и автоматически их списывает"""
     while True:
         try:
+            users = load_users()
+            
             with open(BORROW_DATA, 'r') as f:
                 data = json.load(f)
             
@@ -63,7 +65,6 @@ def checker_borrow(bot):
 
             for i, request in enumerate(data):
                 if time.time() - request['time'] > request['term']:
-                    users = load_users()
 
                     sender = users[str(request['sender'])]
                     recipient = users[str(request['recipient'])]
@@ -72,14 +73,15 @@ def checker_borrow(bot):
                     recipient['money'] += request['amount']
 
                     deleted.append(i)
-                    save_users(users)
 
                     # Отправка уведомлений
                     try:
-                        bot.send_message(sender['id'], f"Срок истек! Вы вернули пользователю @{recipient.get('username', 'Unknown')} {request['amount']} коинов.")
-                        bot.send_message(recipient['id'], f"Срок истек! Вы полчили от пользователя @{sender.get('username', 'Unknown')} {request['amount']} коинов.")
+                        bot.send_message(request['sender'], f"Срок истек! Вы вернули пользователю @{recipient.get('username', 'Unknown')} {request['amount']} коинов.")
+                        bot.send_message(request['recipient'], f"Срок истек! Вы полчили от пользователя @{sender.get('username', 'Unknown')} {request['amount']} коинов.")
                     except Exception as e:
                         logger.warning(f"Failed to send notification: {type(e).__name__}: {e}")
+          
+            save_users(users)
 
             for i in deleted:
                 data.pop(i)
