@@ -1178,7 +1178,6 @@ def setup(bot):
 
     @bot.message_handler(commands=['farm'])
     def cmd_farm(message):
-        users = load_users()
         if bot_stat(message, bot): return
         user_id = message.from_user.id
         add_chat(message.chat.id)
@@ -1450,7 +1449,6 @@ def setup(bot):
 
     @bot.message_handler(func=lambda m: m.text and ('casino' in m.text.split()[0].lower() or 'деп' == m.text.split()[0].lower()) )
     def cmd_casino(msg):
-        users = load_users()
         # Инициализация пользователя
         if bot_stat(msg, bot): return
 
@@ -2042,7 +2040,6 @@ def setup(bot):
     @bot.message_handler(commands=['borrow'])
     @log_handler
     def cmd_borrow(msg):
-        users = load_users()
         """Взять в долг у другого пользователя"""
         # Проверка аргументов
         args = msg.text.split()
@@ -3477,8 +3474,6 @@ def setup(bot):
  
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
     def text(message):
-        users = load_users()
-
         user_id = message.from_user.id
         add_chat(message.chat.id)
         top_add(user_id, message.chat.id)
@@ -3692,7 +3687,6 @@ def setup(bot):
                 bank_save(databank)
 
             elif text in ['farm', 'farma', 'фарм', 'заработать', 'поработать', 'работа', 'добыть', 'нафармить']:
-                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)
@@ -3756,7 +3750,6 @@ def setup(bot):
                 save_users(users)
 
             elif text in ['profile', 'профиль', 'проф', 'акк', 'аккаунт', '.инфа', 'моя инфа', 'мой профиль']:
-                users = load_users()
                 if bot_stat(message, bot): return
                 user_id = message.from_user.id
                 add_chat(message.chat.id)

@@ -76,7 +76,7 @@ def checker_borrow(bot):
                     # Отправка уведомлений
                     try:
                         bot.send_message(request['sender'], f"Срок истек! Вы вернули пользователю @{recipient.get('username', 'Unknown')} {request['amount']} коинов.")
-                        bot.send_message(request['recipient'], f"Срок истек! Вы полчили от пользователя @{sender.get('username', 'Unknown')} {request['amount']} коинов.")
+                        bot.send_message(request['recipient'], f"Срок истек! Вы получили от пользователя @{sender.get('username', 'Unknown')} {request['amount']} коинов.")
                     except Exception as e:
                         logger.warning(f"Failed to send notification: {type(e).__name__}: {e}")
           
