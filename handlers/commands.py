@@ -2042,6 +2042,7 @@ def setup(bot):
     @bot.message_handler(commands=['borrow'])
     @log_handler
     def cmd_borrow(msg):
+        users = load_users()
         """Взять в долг у другого пользователя"""
         # Проверка аргументов
         args = msg.text.split()
@@ -2079,6 +2080,10 @@ def setup(bot):
             return
         elif percent > MAX_PERCENT_BORROW:
             bot.reply_to(msg, f"*Процент не может быть больше {MAX_PERCENT_BORROW}%!*", parse_mode='markdown')
+            return
+
+        if username == msg.from_user.username:
+            bot.reply_to(msg, f"*Невозможно взять в долг у самого себя.*", parse_mode='markdown')
             return
         
 
