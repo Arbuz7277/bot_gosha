@@ -2176,6 +2176,7 @@ def setup(bot):
         amount = request['amount']
         request['time'] = time.time()
         request['amount'] += request['amount'] * request['percent']
+        request['status'] = "active"
         data.append(request)
 
         with open(BORROW_DATA, 'w') as f:

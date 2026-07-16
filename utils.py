@@ -61,8 +61,6 @@ def checker_borrow(bot):
             with open(BORROW_DATA, 'r') as f:
                 data = json.load(f)
             
-            deleted = []  # Список индексов, которых нужно удалить
-
             for i, request in enumerate(data):
                 if time.time() - request['time'] > request['term']:
 
@@ -72,7 +70,8 @@ def checker_borrow(bot):
                     sender['money'] -= request['amount']
                     recipient['money'] += request['amount']
 
-                    deleted.append(i)
+                    request['status'] = "passed"
+
 
                     # Отправка уведомлений
                     try:
@@ -82,9 +81,6 @@ def checker_borrow(bot):
                         logger.warning(f"Failed to send notification: {type(e).__name__}: {e}")
           
             save_users(users)
-
-            for i in deleted:
-                data.pop(i)
 
             with open(BORROW_DATA, 'w') as f:
                 json.dump(data, f, indent=4)
