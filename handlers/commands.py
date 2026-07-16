@@ -3474,6 +3474,8 @@ def setup(bot):
  
     @bot.message_handler(func=lambda message: True, content_types=['text', 'animation', 'photo', 'video', 'document', 'sticker', 'voice', 'audio', 'location', 'contact'])
     def text(message):
+        global users
+
         user_id = message.from_user.id
         add_chat(message.chat.id)
         top_add(user_id, message.chat.id)
