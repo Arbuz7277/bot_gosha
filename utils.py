@@ -62,7 +62,7 @@ def checker_borrow(bot):
                 data = json.load(f)
             
             for i, request in enumerate(data):
-                if time.time() - request['time'] > request['term']:
+                if time.time() - request['time'] > request['term'] and request['status'] == 'active':
 
                     sender = users[str(request['sender'])]
                     recipient = users[str(request['recipient'])]

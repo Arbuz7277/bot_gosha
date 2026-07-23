@@ -3271,7 +3271,7 @@ def setup(bot):
             hash_hex = hashlib.sha256(message.encode('utf-8')).hexdigest()
             return int(hash_hex, 16) < target, hash_hex
 
-        default_time = 60 * 30
+        default_time = 60 * 5
         mine_path = 'dp/mine_data.json'
         if not os.path.exists(mine_path):
             with open(mine_path, 'w') as f:
@@ -3293,7 +3293,7 @@ def setup(bot):
         # Var
         size_token = 32
         
-        max_target = (2**16 - 1) << 212
+        max_target = (2**16 - 1) << 216
         
         data.setdefault('seed', secrets.token_bytes(size_token).hex())
         data.setdefault('target', int(max_target))
@@ -3304,14 +3304,14 @@ def setup(bot):
 
 
 
-        reward = 50
+        reward = 12.5
 
         with open(mine_path, 'w') as f:
             json.dump(data, f, indent=4)
 
         args = msg.text.split()
         if len(args) != 2:
-            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + str(nonce)), 16) &lt; target </code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: <code>{target}</code> (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>int(hashlib.sha256((seed + str(nonce)).encode("utf-8")).hexdigest(), 16) &lt target</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
+            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + str(nonce)), 16) &lt; target </code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: <code>{target:064x}</code> (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>int(hashlib.sha256((seed + str(nonce)).encode("utf-8")).hexdigest(), 16) &lt target</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
             return
         
         try:
@@ -3366,7 +3366,21 @@ def setup(bot):
             with open("dp/mine_history.txt", 'a') as f:
                 f.write(f"[{hd['date']}] Found nonce.\nSeed: {hd['seed']}\nTarget: {hd['target']}\nNonce: {hd['nonce']}\nUser_id: {hd['user_id']}")
 
-            bot.reply_to(msg, f"Поздравляю! Вы получили <code>{reward}</code> коинов!\nSeed был обновлен\n\n- Hash: <code>{_hash}</code>\n- Seed: <code>{seed}</code>\n- Nonce: <code>{nonce}</code>\n\nUnix Time: <code>{hd['time']}</code>\nTime: {time.ctime(hd['time'])}", parse_mode='HTML')
+            bot.reply_to(
+                msg,
+                f"Поздравляю! Вы получили <code>{reward}</code> коинов!\n\n"
+                "--- Текущий блок ---\n"
+                f"- Хеш: <code>{_hash}</code>\n"
+                f"- Seed: <code>{seed}</code>\n"
+                f"- Target: <code>{target:064x}</code>\n"
+                f"- Nonce: <code>{nonce}</code>\n\n"
+                "--- Новые данные ---\n"
+                f"- Seed: <code>{data['seed']}</code>\n"
+                f"- Target: <code>{data['target']:064x}</code>\n\n"
+                f"Unix Time: <code>{hd['time']}</code>\n"
+                f"Time: {time.ctime(hd['time'])}",
+                parse_mode='HTML'
+            )
         else:
             bot.reply_to(msg, f"Nonce неверный!")
         save_users(users)
