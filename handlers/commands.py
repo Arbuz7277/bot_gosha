@@ -3266,6 +3266,7 @@ def setup(bot):
             register(msg, bot, types, users)
             return
         user = users[str(user_id)]
+
         def is_valid_nonce(seed, nonce, target):
             message = seed + str(nonce)
             hash_hex = hashlib.sha256(message.encode('utf-8')).hexdigest()
@@ -3279,30 +3280,23 @@ def setup(bot):
         with open(mine_path, 'r') as f:
             data = json.load(f)
 
-        with open("dp/mine_history.json", 'r') as f:
+        history_path = "dp/mine_history.json"
+        if not os.path.exists(history_path):
+            with open(history_path, 'w') as f:
+                f.write("{}")
+        with open(history_path, 'r') as f:
             mine_history = json.load(f)
-        if not mine_history:
-            current_time = default_time
-        else:
-            blocks = list(mine_history.values())
-            blocks.sort(key=lambda b: b["time"])
-            last_block = blocks[-1]
-            last_time = last_block['time']
-            current_time = time.time() - last_time
-            
+
         # Var
         size_token = 32
-        
         max_target = (2**16 - 1) << 216
-        
+
         data.setdefault('seed', secrets.token_bytes(size_token).hex())
         data.setdefault('target', int(max_target))
 
         seed = data['seed']
         target = data['target']
         difficult = round(max_target / target)
-
-
 
         reward = 12.5
 
@@ -3311,78 +3305,90 @@ def setup(bot):
 
         args = msg.text.split()
         if len(args) != 2:
-            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + str(nonce)), 16) &lt; target </code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: <code>{target:064x}</code> (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>int(hashlib.sha256((seed + str(nonce)).encode("utf-8")).hexdigest(), 16) &lt target</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode = 'HTML')
+            bot.reply_to(msg, f'🪙 <b>Майнинг</b>\n\n🎯 <b>Цель</b>\nНайти число "nonce", при котором <code>int(sha256(seed + str(nonce)), 16) &lt; target </code>\nSHA-256 считается от UTF-8 строки.\n\n📋 <b>Информация</b>\n• Seed: <code>{seed}</code>\n• Target: <code>{target:064x}</code> (Difficult {difficult})\n• Reward: {reward} coins\n\n💡 Бот проверяет nonce по такой команде Python: <code>int(hashlib.sha256((seed + str(nonce)).encode("utf-8")).hexdigest(), 16) &lt target</code>\n\n📝 Используйте <code>/miner nonce</code> для получения награды.', parse_mode='HTML')
             return
-        
+
         try:
             nonce = int(args[1])
         except:
             bot.reply_to(msg, "Это не число.")
             return
-        
+
         is_valid, _hash = is_valid_nonce(seed, nonce, target)
-        if is_valid:
-            data['seed'] = _hash
+        if not is_valid:
+            bot.reply_to(msg, "Nonce неверный!")
+            return
+
+        data['seed'] = _hash
+        with open(mine_path, 'w') as f:
+            json.dump(data, f, indent=4)
+
+        with open(history_path, 'r') as f:
+            history = json.load(f)
+
+        now_ts = time.time()
+        hd = {
+            "seed": seed,
+            "difficult": difficult,
+            "target": target,          # таргет, реально использованный для этого блока
+            "nonce": nonce,
+            "user_id": msg.from_user.id,
+            "date": f"{datetime.now()}",
+            "time": now_ts,
+        }
+        # Добавляем блок ДО пересчёта таргета
+        history[seed] = hd
+
+        med_len = 5
+        new_target = None
+        if len(history) > med_len and len(history) % med_len == 0:
+            history_values = sorted(history.values(), key=lambda x: x['time'])[-(med_len + 1):]
+            time_list = []
+            for i in range(1, med_len + 1):
+                last_time = history_values[i - 1]['time']
+                current_time = history_values[i]['time']
+                time_list.append(current_time - last_time)
+
+            sort_time = sorted(time_list)
+            time_med = sort_time[len(sort_time) // 2]
+
+            new_target = int(max(
+                target / 4,
+                min(max_target, min(target * 4, target / (default_time / time_med)))
+            ))
+            data['target'] = new_target
             with open(mine_path, 'w') as f:
                 json.dump(data, f, indent=4)
 
-            with open("dp/mine_history.json", 'r') as f:
-                history = json.load(f)
-            
-            med_len = 5
-            if len(history) % med_len == 0:
-                #  Total blocks: med_len + 1
-                history_values = sorted(history.values(), key=lambda x: x['time'])[-(med_len + 1):]
-                time_list = []
-                for i in range(1, med_len + 1):
-                    last_time = history_values[i - 1]['time']
-                    current_time = history_values[i]['time']
-                    total_time = current_time - last_time
-                    time_list.append(total_time)
+        with open(history_path, 'w') as f:
+            json.dump(history, f, indent=2)
 
-                sort_time = sorted(time_list)
-                time_med = sort_time[len(sort_time)//2]
-
-                data['target'] = target = int(max(target / 4, min(max_target, min(target * 4, (target / (default_time / time_med))))))
-
-                with open(mine_path, 'w') as f:
-                    json.dump(data, f, indent=4)
-
-            history[seed] = {}
-            hd = history[seed]
-            hd["seed"] = seed
-            hd["difficult"] = difficult
-            hd['target'] = target
-            hd['nonce'] = nonce
-            hd['user_id'] = msg.from_user.id
-            hd['date'] = f"{datetime.now()}"
-            hd['time'] = time.time()
-            
-            with open("dp/mine_history.json", 'w') as f:
-                json.dump(history, f, indent=2)
-
-            user['money'] += reward
-            logger.info(f"Found block, user id: {msg.from_user.id}")
-            with open("dp/mine_history.txt", 'a') as f:
-                f.write(f"[{hd['date']}] Found nonce.\nSeed: {hd['seed']}\nTarget: {hd['target']}\nNonce: {hd['nonce']}\nUser_id: {hd['user_id']}")
-
-            bot.reply_to(
-                msg,
-                f"Поздравляю! Вы получили <code>{reward}</code> коинов!\n\n"
-                "--- Текущий блок ---\n"
-                f"- Хеш: <code>{_hash}</code>\n"
-                f"- Seed: <code>{seed}</code>\n"
-                f"- Target: <code>{target:064x}</code>\n"
-                f"- Nonce: <code>{nonce}</code>\n\n"
-                "--- Новые данные ---\n"
-                f"- Seed: <code>{data['seed']}</code>\n"
-                f"- Target: <code>{data['target']:064x}</code>\n\n"
-                f"Unix Time: <code>{hd['time']}</code>\n"
-                f"Time: {time.ctime(hd['time'])}",
-                parse_mode='HTML'
+        user['money'] += reward
+        logger.info(f"Found block, user id: {msg.from_user.id}")
+        with open("dp/mine_history.txt", 'a') as f:
+            f.write(
+                f"[{hd['date']}] Found nonce.\n"
+                f"Seed: {hd['seed']}\n"
+                f"Target: {hd['target']}\n"
+                f"Nonce: {hd['nonce']}\n"
+                f"User_id: {hd['user_id']}\n\n"
             )
-        else:
-            bot.reply_to(msg, f"Nonce неверный!")
+
+        bot.reply_to(
+            msg,
+            f"Поздравляю! Вы получили <code>{reward}</code> коинов!\n\n"
+            "--- Текущий блок ---\n"
+            f"- Хеш: <code>{_hash}</code>\n"
+            f"- Seed: <code>{seed}</code>\n"
+            f"- Target: <code>{target:064x}</code>\n"
+            f"- Nonce: <code>{nonce}</code>\n\n"
+            "--- Новые данные ---\n"
+            f"- Seed: <code>{data['seed']}</code>\n"
+            f"- Target: <code>{data['target']:064x}</code>\n\n"
+            f"Unix Time: <code>{hd['time']}</code>\n"
+            f"Time: {time.ctime(hd['time'])}",
+            parse_mode='HTML'
+        )
         save_users(users)
 
     @bot.message_handler(commands=['miner_info'])

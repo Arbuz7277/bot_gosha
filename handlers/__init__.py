@@ -29,11 +29,11 @@ def setup_handlers(bot):
     bot = message_setup(bot)
     bot = balance_setup(bot)
     bot = about_setup(bot)
+    bot = mine_history_setup(bot)
 
     bot = commands_setup(bot)
 
     bot = casino_setup(bot)
-    bot = mine_history_setup(bot)
     bot = farm_setup(bot)
 
 
