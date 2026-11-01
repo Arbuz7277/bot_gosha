@@ -1,13 +1,9 @@
+.env
 *.env
-Logs/
-dp/
-!/dp/*.py
-*.log
+logs/
 venv/
 .venv/
-*.swp
-*.swo
 __pycache__/
+*.pyc
+*.swp
 *~
-
-bot_control.py

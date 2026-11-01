@@ -1,6 +1,6 @@
-telebot
-dotenv
-pytz
-emoji
-matplotlib
-numexpr
+aiogram>=3.13,<4
+asyncpg>=0.29
+python-dotenv>=1.0
+emoji>=2.10
+matplotlib>=3.8
+tzdata
